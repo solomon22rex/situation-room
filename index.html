@@ -14,7 +14,7 @@
     --border:rgba(255,215,0,.25);--border-bright:rgba(255,215,0,.5);
   }
   body{background:var(--bg);color:var(--yellow);font-family:'Times New Roman',Times,Georgia,serif;overflow:hidden;height:100vh;width:100vw;user-select:none}
-  .dashboard{display:grid;grid-template-rows:auto 1fr 36px;height:100vh;gap:0;background:var(--bg-deep)}
+  .dashboard{display:grid;grid-template-rows:auto 1fr 56px;height:100vh;gap:0;background:var(--bg-deep)}
   .header{background:linear-gradient(180deg,#0d2a5c,#081a3a);border-bottom:1px solid var(--border-bright);padding:6px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
   .logo-area{display:flex;align-items:center;gap:14px}
   .logo{font-size:20px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 12px rgba(255,215,0,.4)}
@@ -133,8 +133,8 @@
   /* Ticker */
   .ticker-bar{display:flex;align-items:center;background:linear-gradient(180deg,#0d2a5c,#081a3a);border-top:1px solid var(--border-bright);overflow:hidden}
   .ticker-label{flex-shrink:0;padding:0 12px;font-weight:bold;font-size:11px;letter-spacing:2px;background:var(--red);color:white;height:100%;display:flex;align-items:center;font-family:'Courier New',monospace}
-  .ticker-content{flex:1;overflow:hidden;white-space:nowrap;padding-left:8px}
-  .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 220s linear infinite;font-size:13px}
+  .ticker-content{flex:1;overflow:hidden;white-space:nowrap;padding-left:8px;padding-right:64px}
+  .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 220s linear infinite;font-size:14px}
   .ticker-scroll:hover{animation-play-state:paused}
   @keyframes ticker-move{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
   .ticker-src{color:var(--blue-bright);font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
@@ -144,6 +144,28 @@
   .resize-handle{position:absolute;bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize;z-index:5}
   .resize-handle::after{content:'';position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-right:2px solid var(--yellow-dim);border-bottom:2px solid var(--yellow-dim);opacity:.4}
   .resize-handle:hover::after{opacity:.8}
+  /* Intel panel tabs */
+  .intel-tabs{display:flex;gap:0;flex-shrink:0;border-bottom:1px solid var(--border)}
+  .intel-tab{flex:1;text-align:center;padding:5px 8px;font-size:11px;font-weight:bold;letter-spacing:1px;cursor:pointer;background:rgba(0,0,0,.3);color:var(--yellow-dim);border-right:1px solid var(--border);font-family:'Courier New',monospace;text-transform:uppercase;transition:background .15s}
+  .intel-tab:last-child{border-right:none}
+  .intel-tab:hover{background:rgba(255,215,0,.08);color:var(--yellow)}
+  .intel-tab.active{background:rgba(255,215,0,.12);color:var(--yellow);border-bottom:2px solid var(--yellow)}
+  .intel-panel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+  .intel-panel.active{display:flex}
+  #win-intel .win-titlebar{background:linear-gradient(90deg,#1a1a5a,#3a2a8a)}
+  /* 3D Globe */
+  .globe-container{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:42px;height:42px;perspective:200px;z-index:5}
+  .globe{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--yellow);position:relative;animation:spin-globe 4s linear infinite;transform-style:preserve-3d;box-shadow:0 0 8px rgba(255,215,0,.2),inset 0 0 12px rgba(255,215,0,.08)}
+  .globe::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;border-top:1px solid rgba(255,215,0,.3);border-bottom:1px solid rgba(255,215,0,.3);transform:rotateX(60deg)}
+  .globe::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;border-top:1px solid rgba(255,215,0,.25);border-bottom:1px solid rgba(255,215,0,.25);transform:rotateX(30deg)}
+  .globe-ring{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;border-left:1px solid rgba(255,215,0,.3);border-right:1px solid rgba(255,215,0,.3)}
+  .globe-ring:nth-child(1){transform:rotateY(0deg)}
+  .globe-ring:nth-child(2){transform:rotateY(45deg)}
+  .globe-ring:nth-child(3){transform:rotateY(90deg)}
+  .globe-ring:nth-child(4){transform:rotateY(135deg)}
+  .globe-equator{position:absolute;top:50%;left:-2px;right:-2px;height:0;border-top:1.5px solid var(--yellow);opacity:.5}
+  @keyframes spin-globe{0%{transform:rotateY(0deg)}100%{transform:rotateY(360deg)}}
+  .ticker-bar{position:relative}
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:rgba(255,215,0,.2);border-radius:3px}
@@ -199,19 +221,32 @@
       <div class="win-body" id="feed-world"></div>
       <div class="resize-handle" data-win="win-world"></div>
     </div>
-    <!-- Security & OSINT -->
-    <div class="win" id="win-security">
+    <!-- Intel: Security/OSINT + Bluesky combined -->
+    <div class="win" id="win-intel">
       <div class="win-titlebar">
-        <span class="win-titlebar-text" id="title-security">Security &amp; OSINT</span>
-        <span class="win-updated" id="updated-security"></span>
+        <span class="win-titlebar-text" id="title-intel">Intel &amp; OSINT</span>
+        <span class="win-updated" id="updated-intel"></span>
         <div class="win-btns">
-          <button class="win-btn" onclick="toggleMin('win-security')" title="Minimize">_</button>
-          <button class="win-btn" onclick="toggleMax('win-security')" title="Maximize">&#9633;</button>
+          <button class="win-btn" onclick="toggleMin('win-intel')" title="Minimize">_</button>
+          <button class="win-btn" onclick="toggleMax('win-intel')" title="Maximize">&#9633;</button>
         </div>
       </div>
-      <div class="feed-health" id="health-security"></div>
-      <div class="win-body" id="feed-security"></div>
-      <div class="resize-handle" data-win="win-security"></div>
+      <div class="intel-tabs">
+        <div class="intel-tab active" onclick="switchIntelTab('security')">Security RSS</div>
+        <div class="intel-tab" onclick="switchIntelTab('bluesky')">Bluesky</div>
+      </div>
+      <div class="intel-panel active" id="intel-security">
+        <div class="feed-health" id="health-security"></div>
+        <div class="win-body" id="feed-security"></div>
+      </div>
+      <div class="intel-panel" id="intel-bluesky">
+        <div class="bsky-tabs" id="bsky-tabs"></div>
+        <div class="bsky-search-note" id="bsky-search-note"></div>
+        <div class="bsky-feed" id="bsky-feed">
+          <div class="bsky-loading">Loading Bluesky feeds...</div>
+        </div>
+      </div>
+      <div class="resize-handle" data-win="win-intel"></div>
     </div>
     <!-- Alerts / Watchlist -->
     <div class="win" id="win-alerts">
@@ -250,50 +285,43 @@
       </div>
       <div class="resize-handle" data-win="win-video"></div>
     </div>
-    <!-- Bluesky / OSINT Feeds -->
-    <div class="win" id="win-bsky">
-      <div class="win-titlebar" style="background:linear-gradient(90deg,#003366,#0055aa)">
-        <span class="win-titlebar-text" id="bsky-panel-title">Bluesky / OSINT Feeds</span>
-        <span class="win-updated" id="updated-bsky"></span>
-        <div class="win-btns">
-          <button class="win-btn" onclick="toggleMin('win-bsky')" title="Minimize">_</button>
-          <button class="win-btn" onclick="toggleMax('win-bsky')" title="Maximize">&#9633;</button>
-        </div>
-      </div>
-      <div class="bsky-tabs" id="bsky-tabs"></div>
-      <div class="bsky-search-note" id="bsky-search-note"></div>
-      <div class="bsky-feed" id="bsky-feed">
-        <div class="bsky-loading">Loading Bluesky feeds...</div>
-      </div>
-      <div class="resize-handle" data-win="win-bsky"></div>
-    </div>
   </div>
   <div class="ticker-bar">
     <div class="ticker-label">BREAKING</div>
     <div class="ticker-content"><div class="ticker-scroll" id="ticker"></div></div>
+    <div class="globe-container">
+      <div class="globe">
+        <div class="globe-ring"></div>
+        <div class="globe-ring"></div>
+        <div class="globe-ring"></div>
+        <div class="globe-ring"></div>
+        <div class="globe-equator"></div>
+      </div>
+    </div>
   </div>
 </div>
-<div class="kbd-hint">Drag titlebars &bull; Resize corners &bull; 1-0 channels &bull; R refresh &bull; F fullscreen &bull; / search &bull; ESC clear</div>
+<div class="kbd-hint">Drag titlebars &bull; Resize corners &bull; 1-9 channels &bull; R refresh &bull; F fullscreen &bull; / search &bull; ESC clear</div>
 
 <script>
 // ── Cached DOM refs ──
 const $ = id => document.getElementById(id);
 const DOM = {
   feedWorld: $('feed-world'), feedSec: $('feed-security'),
-  titleWorld: $('title-world'), titleSec: $('title-security'),
+  titleWorld: $('title-world'), titleIntel: $('title-intel'),
   sysFeeds: $('sys-feeds'), sysItems: $('sys-items'), sysUptime: $('sys-uptime'),
   filterInput: $('filter-input'), filterCount: $('filter-count'),
   filterTag: $('filter-tag'), filterTagTerm: $('filter-tag-term'),
   bskyTabs: $('bsky-tabs'), bskyFeed: $('bsky-feed'),
-  bskyTitle: $('bsky-panel-title'), bskySearchNote: $('bsky-search-note'),
+  bskySearchNote: $('bsky-search-note'),
   ticker: $('ticker'), channelsBody: $('channels-body'),
   openWinList: $('open-windows-list'), mainGrid: $('main-grid'),
   healthWorld: $('health-world'), healthSec: $('health-security'),
-  updatedWorld: $('updated-world'), updatedSec: $('updated-security'),
-  updatedBsky: $('updated-bsky'), updatedAlerts: $('updated-alerts'),
+  updatedWorld: $('updated-world'), updatedIntel: $('updated-intel'),
+  updatedAlerts: $('updated-alerts'),
   alertsBody: $('alerts-body'), alertBadge: $('alert-badge'),
   titleAlerts: $('title-alerts'), watchlistBar: $('watchlist-bar'),
   watchlistInput: $('watchlist-input'), breakingIndicator: $('breaking-indicator'),
+  intelSecPanel: $('intel-security'), intelBskyPanel: $('intel-bluesky'),
   clocks: [['ck-la','America/Los_Angeles'],['ck-nyc','America/New_York'],
     ['ck-lon','Europe/London'],['ck-tlv','Asia/Jerusalem'],
     ['ck-mow','Europe/Moscow'],['ck-bjs','Asia/Shanghai'],['ck-tyo','Asia/Tokyo']]
@@ -301,13 +329,12 @@ const DOM = {
 };
 
 // ── Window management: drag, resize, z-index ──
-const winIds = ['win-world','win-security','win-alerts','win-video','win-bsky'];
+const winIds = ['win-world','win-intel','win-alerts','win-video'];
 const defaultLayout = {
-  'win-world':    [0,   0, 17, 100],
-  'win-security': [17,  0, 17, 100],
-  'win-alerts':   [34,  0, 16, 100],
-  'win-video':    [50,  0, 25, 100],
-  'win-bsky':     [75,  0, 25, 100],
+  'win-world':    [0,   0, 18, 100],
+  'win-intel':    [18,  0, 18, 100],
+  'win-alerts':   [36,  0, 34, 100],
+  'win-video':    [70,  0, 30, 100],
 };
 const GAP = 2;
 let topZ = 10;
@@ -338,6 +365,21 @@ function focusAlerts(){
   const el=$('win-alerts');
   el.classList.remove('minimized');
   bringToFront(el);
+}
+
+// ── Intel panel tab switcher ──
+function switchIntelTab(tab){
+  const tabs = document.querySelectorAll('.intel-tab');
+  const panels = document.querySelectorAll('.intel-panel');
+  tabs.forEach(t => t.classList.remove('active'));
+  panels.forEach(p => p.classList.remove('active'));
+  if(tab === 'security'){
+    tabs[0].classList.add('active');
+    DOM.intelSecPanel.classList.add('active');
+  } else {
+    tabs[1].classList.add('active');
+    DOM.intelBskyPanel.classList.add('active');
+  }
 }
 
 // ── Drag ──
@@ -403,7 +445,7 @@ function toggleMax(id){
 }
 
 // ── Auto-scroll via setInterval (more efficient than rAF for slow updates) ──
-const scrollPanels = [DOM.feedWorld, DOM.feedSec].filter(Boolean);
+const scrollPanels = [DOM.feedWorld].filter(Boolean);
 const scrollPause = new Map();
 scrollPanels.forEach(el => {
   scrollPause.set(el, 0);
@@ -644,7 +686,7 @@ function updateOpenWins(){
 }
 DOM.channelsBody.innerHTML=
   '<div class="channels-hint">Click to open in popup window. Multiple channels can be open simultaneously. Keys 1-0 for quick launch.</div>'+
-  channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i<9?i+1:0}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
+  channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i+1}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
 
 // ── Bluesky OSINT feeds (expanded) ──
 const BSKY_API = 'https://public.api.bsky.app/xrpc/';
@@ -733,21 +775,19 @@ function renderBskyPosts(posts){
 
 async function loadBskyFeed(handle){
   DOM.bskyFeed.innerHTML=`<div class="bsky-loading">Loading @${handle}...</div>`;
-  DOM.bskyTitle.textContent=`Bluesky / @${handle}`;
   renderBskyPosts(await fetchBskyFeed(handle));
-  DOM.updatedBsky.textContent = timeStamp();
+  DOM.updatedIntel.textContent = timeStamp();
 }
 
 async function loadBskyAll(){
   DOM.bskyFeed.innerHTML='<div class="bsky-loading">Loading all OSINT feeds...</div>';
-  DOM.bskyTitle.textContent='Bluesky / All OSINT Feeds';
   // Use concurrency limiter (4 at a time instead of all 15 at once)
   const results = await asyncPool(4, bskyAccounts, a => fetchBskyFeed(a.handle));
   let allPosts = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
   allPosts.sort((a,b)=>new Date(b.time)-new Date(a.time));
   bskyTickerPosts = allPosts.slice(0,15);
   renderBskyPosts(allPosts.slice(0,80));
-  DOM.updatedBsky.textContent = timeStamp();
+  DOM.updatedIntel.textContent = timeStamp();
   renderAlerts();
 }
 
@@ -755,7 +795,7 @@ async function loadBskySearch(query){
   bskySearchMode=true; renderBskyTabs();
   DOM.bskySearchNote.textContent=`Bluesky search: "${query}"`;
   DOM.bskySearchNote.classList.add('show');
-  DOM.bskyTitle.textContent=`Bluesky / Search: ${query}`;
+  DOM.titleIntel.textContent=`Search: ${query}`;
   DOM.bskyFeed.innerHTML=`<div class="bsky-loading">Searching Bluesky for "${query}"...</div>`;
   try{
     const r=await fetch(`${BSKY_API}app.bsky.feed.searchPosts?q=${encodeURIComponent(query)}&limit=30&sort=latest`,{signal:AbortSignal.timeout(10000)});
@@ -949,7 +989,7 @@ async function loadAllFeeds(){
   allItems = [];
   for(const [key, results] of Object.entries(panelResults)){
     const el = key==='world' ? DOM.feedWorld : DOM.feedSec;
-    const updatedEl = key==='world' ? DOM.updatedWorld : DOM.updatedSec;
+    const updatedEl = key==='world' ? DOM.updatedWorld : DOM.updatedIntel;
     if(!el) continue;
     let items = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
     items = deduplicateItems(items);
@@ -1004,7 +1044,7 @@ async function searchFeeds(query){
     DOM.feedSec.innerHTML = '';
   }
   DOM.titleWorld.textContent=`Results: "${query}" (1)`;
-  DOM.titleSec.textContent=`Results: "${query}" (2)`;
+  DOM.titleIntel.textContent=`Results: "${query}" (2)`;
   DOM.filterCount.textContent=`${deduped.length} results`;
 }
 
@@ -1043,7 +1083,7 @@ function clearFilter(){
   DOM.filterCount.textContent='';
   DOM.bskySearchNote.classList.remove('show');
   DOM.titleWorld.textContent='World News';
-  DOM.titleSec.textContent='Security & OSINT';
+  DOM.titleIntel.textContent='Intel & OSINT';
   loadAllFeeds();
   selectBskyAll();
   scrollPanels.forEach(el=>scrollPause.set(el,0));
