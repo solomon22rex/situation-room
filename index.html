@@ -825,27 +825,42 @@ const PROXIES = [
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
 ];
 
+// Source priority: lower number = higher priority (shown first when timestamps are close)
+const SOURCE_PRIORITY = {
+  'NYT':1,'NYT World':1,
+  'WSJ':2,'WSJ World':2,
+  'Economist':3,
+  'Financial Times':4,
+  'JPost':5,
+  'Haaretz':6,
+  'Al Jazeera':7,
+};
+
 const feedConfig = {
   world: [
-    {name:'BBC World',url:'https://feeds.bbci.co.uk/news/world/rss.xml'},
+    // Tier 1 — priority sources
+    {name:'NYT',url:'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'},
+    {name:'NYT World',url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml'},
+    {name:'WSJ',url:'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain'},
+    {name:'WSJ World',url:'https://feeds.content.dowjones.io/public/rss/RSSWorldNews'},
+    {name:'Financial Times',url:'https://www.ft.com/?format=rss'},
+    {name:'JPost',url:'https://www.jpost.com/rss'},
+    {name:'Haaretz',url:'https://www.haaretz.com/srv/haaretz-late'},
     {name:'Al Jazeera',url:'https://www.aljazeera.com/xml/rss/all.xml'},
+    // Tier 2 — major wires & intl
     {name:'Reuters',url:'https://feeds.reuters.com/reuters/worldNews'},
     {name:'AP News',url:'https://rsshub.app/apnews/topics/world-news'},
-    {name:'NYT World',url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml'},
-    {name:'WSJ World',url:'https://feeds.content.dowjones.io/public/rss/RSSWorldNews'},
+    {name:'BBC World',url:'https://feeds.bbci.co.uk/news/world/rss.xml'},
     {name:'NPR World',url:'https://feeds.npr.org/1004/rss.xml'},
-    {name:'Globe & Mail',url:'https://www.theglobeandmail.com/?service=rss'},
     {name:'France 24',url:'https://www.france24.com/en/rss'},
-    {name:'Spiegel Intl',url:'https://www.spiegel.de/international/index.rss'},
     {name:'DW News',url:'https://rss.dw.com/rdf/rss-en-all'},
     {name:'SCMP',url:'https://www.scmp.com/rss/91/feed'},
     {name:'The Diplomat',url:'https://thediplomat.com/feed/'},
-    {name:'JPost',url:'https://www.jpost.com/rss'},
-    {name:'Haaretz',url:'https://www.haaretz.com/srv/haaretz-late'},
+    // Tier 3 — regional & niche
     {name:'YNet',url:'http://www.ynet.co.il/Integration/StoryRss3254.xml'},
     {name:'Times of Israel',url:'https://www.timesofisrael.com/feed/'},
     {name:'The Intercept',url:'https://theintercept.com/feed/?rss'},
-    {name:'Der Spiegel',url:'https://www.spiegel.de/schlagzeilen/index.rss'},
+    {name:'Globe & Mail',url:'https://www.theglobeandmail.com/?service=rss'},
     {name:'Le Devoir',url:'https://www.ledevoir.com/rss/manchettes.xml'},
     {name:'Le Monde',url:'https://www.lemonde.fr/rss/une.xml'},
   ],
@@ -1003,7 +1018,16 @@ async function loadAllFeeds(){
     if(!el) continue;
     let items = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
     items = deduplicateItems(items);
-    items.sort((a,b) => new Date(b.pubDate) - new Date(a.pubDate));
+    items.sort((a,b) => {
+      const timeDiff = new Date(b.pubDate) - new Date(a.pubDate);
+      // Within 30 min window, sort by source priority
+      if(Math.abs(timeDiff) < 30*60*1000){
+        const pa = SOURCE_PRIORITY[a.sourceName] || 99;
+        const pb = SOURCE_PRIORITY[b.sourceName] || 99;
+        if(pa !== pb) return pa - pb;
+      }
+      return timeDiff;
+    });
     allItems.push(...items);
     renderFeedPanel(el, items);
     updatedEl.textContent = timeStamp();
