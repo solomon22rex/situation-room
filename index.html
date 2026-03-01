@@ -42,7 +42,7 @@
   .filter-active-tag{font-size:10px;background:rgba(255,51,51,.2);border:1px solid var(--red);color:var(--yellow);padding:2px 8px;display:none;align-items:center;gap:4px}
   .filter-active-tag.show{display:flex}
   .main-content{position:relative;overflow:hidden;min-height:0;background:var(--bg-deep)}
-  .win{background:var(--blue-panel);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:absolute;transition:box-shadow .2s;min-width:160px;min-height:80px}
+  .win{background:var(--blue-panel);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:absolute;transition:box-shadow .2s;min-width:160px;min-height:80px;contain:layout style}
   .win.active-win{z-index:50;box-shadow:0 0 20px rgba(255,215,0,.15)}
   .win.minimized .win-body,.win.minimized .channels-body,.win.minimized .open-windows-bar,.win.minimized .bsky-feed,.win.minimized .bsky-tabs,.win.minimized .bsky-search-note,.win.minimized .alerts-body,.win.minimized .watchlist-bar{display:none}
   .win.minimized{height:28px!important;min-height:28px!important;overflow:hidden}
@@ -54,7 +54,7 @@
   .win-btns{display:flex;gap:3px}
   .win-btn{width:18px;height:16px;background:var(--blue-dark);border:1px solid var(--border);color:var(--yellow);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Arial;padding:0;line-height:1}
   .win-btn:hover{background:rgba(255,215,0,.15);border-color:var(--yellow)}
-  .win-body{flex:1;overflow-y:auto;position:relative;min-height:0;scroll-behavior:auto}
+  .win-body{flex:1;overflow-y:auto;position:relative;min-height:0;scroll-behavior:auto;contain:layout style}
   .feed-item{padding:6px 10px;border-bottom:1px solid rgba(255,215,0,.08);cursor:pointer;transition:background .15s;position:relative}
   .feed-item:hover{background:rgba(255,215,0,.07)}
   .feed-item:hover .feed-preview{display:block}
@@ -71,6 +71,7 @@
   .feed-dot.ok{background:var(--green);box-shadow:0 0 3px var(--green)}
   .feed-dot.fail{background:var(--red);box-shadow:0 0 3px var(--red)}
   .feed-dot.loading{background:var(--orange);animation:pulse 1s infinite}
+  .feed-dot.cached{background:var(--blue-bright);box-shadow:0 0 3px var(--blue-bright)}
   .channels-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow-y:auto;padding:6px;gap:4px}
   .channels-hint{font-size:11px;color:var(--yellow-dim);padding:4px 6px;font-style:italic;line-height:1.4}
   .ch-card{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(0,0,0,.25);border:1px solid var(--border);cursor:pointer;transition:all .2s}
@@ -90,7 +91,7 @@
   .bsky-tab{background:var(--blue-dark);border:1px solid var(--border);color:var(--yellow-dim);font-size:9px;font-family:'Times New Roman',serif;font-weight:bold;padding:2px 6px;cursor:pointer;white-space:nowrap}
   .bsky-tab:hover{color:var(--yellow);border-color:var(--yellow)}
   .bsky-tab.active{background:rgba(255,215,0,.12);color:var(--yellow);border-color:var(--yellow)}
-  .bsky-feed{flex:1;overflow-y:auto;min-height:0;background:rgba(0,0,0,.4);position:relative}
+  .bsky-feed{flex:1;overflow-y:auto;min-height:0;background:rgba(0,0,0,.4);position:relative;contain:layout style}
   .bsky-loading{padding:20px;text-align:center;color:var(--yellow-dim);font-style:italic;font-size:11px}
   .bsky-post{padding:8px 10px;border-bottom:1px solid rgba(0,186,255,.12);cursor:pointer;transition:background .15s}
   .bsky-post:hover{background:rgba(0,186,255,.07)}
@@ -162,7 +163,7 @@
         <div class="clock-item"><div class="clock-label">TOKYO</div><div class="clock-time" id="ck-tyo"></div></div>
       </div>
       <div class="sys-stats">
-        <span id="sys-feeds">FEEDS: 0/20</span>
+        <span id="sys-feeds">FEEDS: 0/0</span>
         <span id="sys-items">ITEMS: 0</span>
         <span id="sys-uptime">UP 00:00:00</span>
         <button class="reset-btn" onclick="layoutWindows()" title="Reset all windows to default positions">RESET LAYOUT</button>
@@ -395,33 +396,43 @@ function toggleMax(id){
   bringToFront(el);
 }
 
-// ── Auto-scroll via rAF ──
+// ── Auto-scroll via setInterval (more efficient than rAF for slow updates) ──
 const scrollPanels = [DOM.feedWorld, DOM.feedSec].filter(Boolean);
 const scrollPause = new Map();
 scrollPanels.forEach(el => {
   scrollPause.set(el, 0);
   el.addEventListener('wheel', () => { scrollPause.set(el, Date.now() + 8000); }, {passive:true});
 });
-let lastScroll = 0;
-function autoScroll(ts) {
-  if (ts - lastScroll > 50) {
-    lastScroll = ts;
-    const now = Date.now();
-    scrollPanels.forEach(el => {
-      if (now < scrollPause.get(el)) return;
-      el.scrollTop += 0.5;
-      if (el.scrollTop >= el.scrollHeight - el.clientHeight - 5) el.scrollTop = 0;
-    });
-  }
-  requestAnimationFrame(autoScroll);
-}
-requestAnimationFrame(autoScroll);
+setInterval(() => {
+  const now = Date.now();
+  scrollPanels.forEach(el => {
+    if (now < scrollPause.get(el)) return;
+    if (el.closest('.win')?.classList.contains('minimized')) return; // Skip minimized panels
+    el.scrollTop += 0.5;
+    if (el.scrollTop >= el.scrollHeight - el.clientHeight - 5) el.scrollTop = 0;
+  });
+}, 50);
 
 // ── Utility ──
 function stripHTML(s){return(s||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim()}
-function escapeAttr(s){return s.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escapeAttr(s){return(s||'').replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function timeAgo(d){const m=Math.floor((Date.now()-new Date(d).getTime())/60000);if(m<1)return'NOW';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return(h/24|0)+'d'}
 function timeStamp(){return new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'})}
+
+// ── Concurrency limiter — prevents network flooding ──
+function asyncPool(limit, items, fn) {
+  const results = [];
+  let i = 0;
+  function next() {
+    if (i >= items.length) return Promise.resolve();
+    const idx = i++;
+    const p = fn(items[idx]).then(r => { results[idx] = {status:'fulfilled',value:r}; })
+      .catch(e => { results[idx] = {status:'rejected',reason:e}; });
+    return p.then(next);
+  }
+  const workers = Array.from({length: Math.min(limit, items.length)}, next);
+  return Promise.all(workers).then(() => results);
+}
 
 // ── Desktop Notifications ──
 let notifPermission = Notification.permission || 'default';
@@ -447,7 +458,6 @@ function renderWatchlistTags(){
   ).join('');
   DOM.watchlistBar.innerHTML = tags +
     '<input class="watchlist-input" id="watchlist-input" type="text" placeholder="+keyword" title="Type a keyword and press Enter">';
-  // Re-attach input listener
   $('watchlist-input').addEventListener('keydown', e => {
     if(e.key === 'Enter'){
       const v = e.target.value.trim().toLowerCase();
@@ -458,13 +468,11 @@ function renderWatchlistTags(){
 }
 function removeWatchword(i){ watchlist.splice(i,1); renderWatchlistTags(); recheckAlerts(); }
 renderWatchlistTags();
-// Request notification permission on first interaction
 document.addEventListener('click', requestNotifPermission, {once:true});
 
 function checkItemAgainstWatchlist(item, type){
   const text = ((item.title||'') + ' ' + (item.text||'') + ' ' + (item.description||'')).toLowerCase();
   const matchedKeywords = watchlist.filter(kw => {
-    // Support multi-word keywords (all words must be present)
     const words = kw.split(/\s+/);
     return words.every(w => text.includes(w));
   });
@@ -495,19 +503,23 @@ function renderAlerts(){
   }
   DOM.alertBadge.style.display = 'inline';
   DOM.alertBadge.textContent = alertItems.length;
-  DOM.alertsBody.innerHTML = alertItems.slice(0,100).map(a => {
-    const safe = escapeAttr(a.link);
-    return `<div class="alert-item" onclick="window.open('${safe}','_blank')">
-      <div class="alert-item-keyword">${escapeAttr(a.keyword)}</div>
+  // Use DocumentFragment for efficient DOM update
+  const frag = document.createDocumentFragment();
+  alertItems.slice(0,100).forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'alert-item';
+    div.onclick = () => window.open(a.link, '_blank');
+    div.innerHTML = `<div class="alert-item-keyword">${escapeAttr(a.keyword)}</div>
       <div class="alert-item-title">${escapeAttr(a.title)}</div>
-      <div class="alert-item-meta"><span>${timeAgo(a.time)}</span><span>${escapeAttr(a.source)}</span><span>${a.type}</span></div>
-    </div>`;
-  }).join('');
+      <div class="alert-item-meta"><span>${timeAgo(a.time)}</span><span>${escapeAttr(a.source)}</span><span>${a.type}</span></div>`;
+    frag.appendChild(div);
+  });
+  DOM.alertsBody.innerHTML = '';
+  DOM.alertsBody.appendChild(frag);
   DOM.updatedAlerts.textContent = timeStamp();
 }
 
 function recheckAlerts(){
-  // Re-run all cached items through updated watchlist
   seenAlertKeys.clear();
   alertItems.length = 0;
   allItems.forEach(item => checkItemAgainstWatchlist(item, 'rss'));
@@ -525,24 +537,26 @@ function tokenize(text){
 
 function detectBreakingNews(){
   const now = Date.now();
-  const recentWindow = 30 * 60 * 1000; // 30 minutes
+  const recentWindow = 30 * 60 * 1000;
   const recent = allItems.filter(i => (now - new Date(i.pubDate).getTime()) < recentWindow);
   if(recent.length < 3){ DOM.breakingIndicator.classList.remove('show'); return; }
 
-  // Build clusters: group items by keyword overlap
   const clusters = [];
   const used = new Set();
+  // Pre-tokenize all recent items (avoid re-tokenizing in inner loop)
+  const tokenized = recent.map(i => tokenize(i.title||''));
+  const tokenSets = tokenized.map(t => new Set(t));
   for(let i = 0; i < recent.length; i++){
     if(used.has(i)) continue;
-    const tokensA = tokenize(recent[i].title||'');
-    if(tokensA.length < 2) continue;
+    if(tokenized[i].length < 2) continue;
     const cluster = [{item:recent[i], idx:i}];
     const sources = new Set([recent[i].sourceName]);
     for(let j = i+1; j < recent.length; j++){
       if(used.has(j)) continue;
-      if(sources.has(recent[j].sourceName)) continue; // Need different sources
-      const tokensB = tokenize(recent[j].title||'');
-      const overlap = tokensA.filter(t => tokensB.includes(t)).length;
+      if(sources.has(recent[j].sourceName)) continue;
+      // Use Set intersection for O(min(n,m)) instead of O(n*m)
+      let overlap = 0;
+      for(const t of tokenized[i]){ if(tokenSets[j].has(t)) overlap++; }
       if(overlap >= 3){
         cluster.push({item:recent[j], idx:j});
         sources.add(recent[j].sourceName);
@@ -550,14 +564,13 @@ function detectBreakingNews(){
     }
     if(sources.size >= 3){
       cluster.forEach(c => used.add(c.idx));
-      clusters.push({items:cluster.map(c=>c.item), sources:[...sources], keywords:tokensA.slice(0,5)});
+      clusters.push({items:cluster.map(c=>c.item), sources:[...sources], keywords:tokenized[i].slice(0,5)});
     }
   }
 
   if(clusters.length > 0){
     DOM.breakingIndicator.classList.add('show');
     DOM.breakingIndicator.textContent = `BREAKING (${clusters.length})`;
-    // Show clusters at top of alerts panel
     const clusterHTML = clusters.map(c =>
       `<div class="breaking-cluster">
         <div class="breaking-cluster-title">${escapeAttr(c.items[0].title||'').substring(0,120)}</div>
@@ -565,19 +578,17 @@ function detectBreakingNews(){
         <div class="breaking-cluster-count">${c.items.length} sources reporting</div>
       </div>`
     ).join('');
-    // Prepend to alerts
     const existing = DOM.alertsBody.innerHTML;
     if(!existing.includes('breaking-cluster')){
       DOM.alertsBody.innerHTML = clusterHTML + existing;
     }
-    // Desktop notification for first cluster
     sendNotif('BREAKING NEWS', stripHTML(clusters[0].items[0].title||'').substring(0,100), 'breaking-' + Date.now());
   } else {
     DOM.breakingIndicator.classList.remove('show');
   }
 }
 
-// ── Live channels ──
+// ── Live channels (expanded) ──
 const channels = [
   {name:'Al Jazeera English',handle:'AlJazeeraEnglish',desc:'24/7 — strongest Middle East coverage',region:'ME'},
   {name:'France 24',handle:'France24_en',desc:'24/7 — French intl, strong Africa/EU',region:'EU'},
@@ -589,6 +600,10 @@ const channels = [
   {name:'i24NEWS',handle:'i24NEWS_EN',desc:'Israel-based English',region:'ME'},
   {name:'WION',handle:'WIONews',desc:'India global news, South Asia',region:'APAC'},
   {name:'NHK World',handle:'NHKWORLD',desc:'Japan, excellent Asia coverage',region:'APAC'},
+  {name:'CNN International',handle:'cnni',desc:'24/7 — US-based global news',region:'US'},
+  {name:'BBC News',handle:'BBCNews',desc:'24/7 — UK public broadcaster',region:'UK'},
+  {name:'NDTV',handle:'ndtv',desc:'24/7 — India, South Asia focus',region:'APAC'},
+  {name:'ABC News AU',handle:'ABCNews',desc:'24/7 — Australian Broadcasting Corp',region:'APAC'},
 ];
 const openWindows = {};
 function openChannel(i){
@@ -606,11 +621,12 @@ DOM.channelsBody.innerHTML=
   '<div class="channels-hint">Click to open in popup window. Multiple channels can be open simultaneously. Keys 1-0 for quick launch.</div>'+
   channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i<9?i+1:0}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
 
-// ── Bluesky OSINT feeds ──
+// ── Bluesky OSINT feeds (expanded) ──
 const BSKY_API = 'https://public.api.bsky.app/xrpc/';
 const bskyAccounts = [
   {handle:'wartranslated.bsky.social',label:'WarTranslated'},
   {handle:'eliothiggins.bsky.social',label:'Higgins'},
+  {handle:'osloeconomicsofpeace.bsky.social',label:'Peace Econ'},
   {handle:'reuters.com',label:'Reuters'},
   {handle:'apnews.com',label:'AP'},
   {handle:'theguardian.com',label:'Guardian'},
@@ -619,10 +635,14 @@ const bskyAccounts = [
   {handle:'washingtonpost.com',label:'WaPo'},
   {handle:'nytimes.com',label:'NYT'},
   {handle:'bellingcat.com',label:'Bellingcat'},
+  {handle:'bbc.com',label:'BBC'},
+  {handle:'ft.com',label:'FT'},
+  {handle:'economist.com',label:'Economist'},
+  {handle:'foreignaffairs.com',label:'ForeignAff'},
 ];
 let currentBskyTab = -1, bskySearchMode = false;
 const bskyCache = {};
-let bskyTickerPosts = []; // For ticker integration
+let bskyTickerPosts = [];
 
 function renderBskyTabs(){
   const allActive = !bskySearchMode && currentBskyTab === -1;
@@ -660,7 +680,6 @@ async function fetchBskyFeed(handle){
       embedTitle:f.post?.embed?.external?.title||f.post?.embed?.record?.value?.text?.substring(0,60)||''
     }));
     bskyCache[handle]={posts,ts:Date.now()};
-    // Check against watchlist
     posts.forEach(p => checkItemAgainstWatchlist({title:p.text,text:p.text,link:postToUrl(p.uri,p.handle),uri:p.uri,handle:p.handle,pubDate:p.time,sourceName:p.handle}, 'bsky'));
     return posts;
   }catch(e){console.warn('Bluesky fetch error:',handle,e);return[];}
@@ -673,15 +692,20 @@ function postToUrl(uri,handle){
 
 function renderBskyPosts(posts){
   if(!posts.length){DOM.bskyFeed.innerHTML='<div class="bsky-loading">No posts found</div>';return;}
-  DOM.bskyFeed.innerHTML=posts.map(p=>{
-    const url=escapeAttr(postToUrl(p.uri,p.handle));
-    const text=escapeAttr(p.text.substring(0,300));
-    const embed=p.hasEmbed?`<div class="bsky-post-embed">${p.embedType.includes('image')?'[image]':p.embedType.includes('external')?escapeAttr(p.embedTitle):'[embed]'}</div>`:'';
-    return`<div class="bsky-post" onclick="window.open('${url}','_blank')">
-      <div class="bsky-post-header"><div class="bsky-post-dot"></div><div class="bsky-post-handle">@${p.handle}</div><div class="bsky-post-time">${timeAgo(p.time)}</div></div>
-      <div class="bsky-post-text">${text}</div>${embed}
-    </div>`;
-  }).join('');
+  // Use DocumentFragment for batch DOM insert
+  const frag = document.createDocumentFragment();
+  posts.forEach(p => {
+    const url = postToUrl(p.uri, p.handle);
+    const div = document.createElement('div');
+    div.className = 'bsky-post';
+    div.onclick = () => window.open(url, '_blank');
+    const embed = p.hasEmbed ? `<div class="bsky-post-embed">${p.embedType.includes('image')?'[image]':p.embedType.includes('external')?escapeAttr(p.embedTitle):'[embed]'}</div>` : '';
+    div.innerHTML = `<div class="bsky-post-header"><div class="bsky-post-dot"></div><div class="bsky-post-handle">@${escapeAttr(p.handle)}</div><div class="bsky-post-time">${timeAgo(p.time)}</div></div>
+      <div class="bsky-post-text">${escapeAttr(p.text.substring(0,300))}</div>${embed}`;
+    frag.appendChild(div);
+  });
+  DOM.bskyFeed.innerHTML = '';
+  DOM.bskyFeed.appendChild(frag);
 }
 
 async function loadBskyFeed(handle){
@@ -694,13 +718,14 @@ async function loadBskyFeed(handle){
 async function loadBskyAll(){
   DOM.bskyFeed.innerHTML='<div class="bsky-loading">Loading all OSINT feeds...</div>';
   DOM.bskyTitle.textContent='Bluesky / All OSINT Feeds';
-  const results=await Promise.allSettled(bskyAccounts.map(a=>fetchBskyFeed(a.handle)));
-  let allPosts=results.flatMap(r=>r.status==='fulfilled'?r.value:[]);
+  // Use concurrency limiter (4 at a time instead of all 15 at once)
+  const results = await asyncPool(4, bskyAccounts, a => fetchBskyFeed(a.handle));
+  let allPosts = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
   allPosts.sort((a,b)=>new Date(b.time)-new Date(a.time));
-  bskyTickerPosts = allPosts.slice(0,15); // Save top posts for ticker
+  bskyTickerPosts = allPosts.slice(0,15);
   renderBskyPosts(allPosts.slice(0,80));
   DOM.updatedBsky.textContent = timeStamp();
-  renderAlerts(); // Update alerts with any new matches
+  renderAlerts();
 }
 
 async function loadBskySearch(query){
@@ -724,7 +749,7 @@ async function loadBskySearch(query){
 renderBskyTabs();
 loadBskyAll();
 
-// ── RSS feeds with health tracking + fallback proxies ──
+// ── RSS feeds with caching, dedup, concurrency limit, health tracking ──
 const PROXIES = [
   url => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`,
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -735,15 +760,21 @@ const feedConfig = {
     {name:'BBC World',url:'https://feeds.bbci.co.uk/news/world/rss.xml'},
     {name:'Al Jazeera',url:'https://www.aljazeera.com/xml/rss/all.xml'},
     {name:'Reuters',url:'https://feeds.reuters.com/reuters/worldNews'},
+    {name:'AP News',url:'https://rsshub.app/apnews/topics/world-news'},
     {name:'NYT World',url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml'},
     {name:'WSJ World',url:'https://feeds.content.dowjones.io/public/rss/RSSWorldNews'},
     {name:'NPR World',url:'https://feeds.npr.org/1004/rss.xml'},
     {name:'Globe & Mail',url:'https://www.theglobeandmail.com/?service=rss'},
     {name:'France 24',url:'https://www.france24.com/en/rss'},
     {name:'Spiegel Intl',url:'https://www.spiegel.de/international/index.rss'},
+    {name:'DW News',url:'https://rss.dw.com/rdf/rss-en-all'},
+    {name:'SCMP',url:'https://www.scmp.com/rss/91/feed'},
+    {name:'The Diplomat',url:'https://thediplomat.com/feed/'},
     {name:'JPost',url:'https://www.jpost.com/rss'},
     {name:'Haaretz',url:'https://www.haaretz.com/srv/haaretz-late'},
     {name:'YNet',url:'http://www.ynet.co.il/Integration/StoryRss3254.xml'},
+    {name:'Times of Israel',url:'https://www.timesofisrael.com/feed/'},
+    {name:'The Intercept',url:'https://theintercept.com/feed/?rss'},
   ],
   security: [
     {name:'Bellingcat',url:'https://www.bellingcat.com/feed/'},
@@ -754,12 +785,33 @@ const feedConfig = {
     {name:'ICG',url:'https://www.crisisgroup.org/feed/rss'},
     {name:'RUSI',url:'https://www.rusi.org/rss.xml'},
     {name:'Foreign Policy',url:'https://foreignpolicy.com/feed/'},
+    {name:'Defense One',url:'https://www.defenseone.com/rss/'},
+    {name:'Krebs on Security',url:'https://krebsonsecurity.com/feed/'},
+    {name:'The Record',url:'https://therecord.media/feed/'},
+    {name:'Just Security',url:'https://www.justsecurity.org/feed/'},
   ],
 };
 
+const MAX_ITEMS = 600; // Cap allItems to prevent unbounded growth
+const RSS_CACHE_TTL = 180000; // 3-minute cache for RSS feeds
+const rssCache = {}; // {feedName: {items:[], ts:number}}
+
 let allItems = [], feedsLoaded = 0;
 const totalFeeds = Object.values(feedConfig).flat().length;
-const feedHealth = {}; // {feedName: 'ok'|'fail'|'loading'}
+const feedHealth = {};
+
+// ── Deduplication ──
+const seenTitles = new Set();
+function deduplicateItems(items){
+  const out = [];
+  for(const item of items){
+    const key = (item.title||'').toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,60);
+    if(!key || seenTitles.has(key)) continue;
+    seenTitles.add(key);
+    out.push(item);
+  }
+  return out;
+}
 
 function renderFeedHealth(panel, sources){
   const el = panel === 'world' ? DOM.healthWorld : DOM.healthSec;
@@ -774,18 +826,39 @@ function feedItemHTML(item){
   const title=stripHTML(item.title).substring(0,200);
   const desc=stripHTML(item.description||'').substring(0,200);
   const preview = desc ? `<div class="feed-preview">${escapeAttr(desc)}</div>` : '';
-  return`<div class="feed-item" onclick="window.open('${safe}','_blank')"><div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${escapeAttr(title)}</div><div class="feed-item-source">${item.sourceName}</div>${preview}</div>`;
+  return`<div class="feed-item" onclick="window.open('${safe}','_blank')"><div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${escapeAttr(title)}</div><div class="feed-item-source">${escapeAttr(item.sourceName)}</div>${preview}</div>`;
+}
+
+// Build DOM via DocumentFragment instead of innerHTML concatenation
+function renderFeedPanel(el, items){
+  const frag = document.createDocumentFragment();
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'feed-item';
+    div.onclick = () => window.open(item.link || '', '_blank');
+    const title = stripHTML(item.title).substring(0,200);
+    const desc = stripHTML(item.description||'').substring(0,200);
+    const preview = desc ? `<div class="feed-preview">${escapeAttr(desc)}</div>` : '';
+    div.innerHTML = `<div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${escapeAttr(title)}</div><div class="feed-item-source">${escapeAttr(item.sourceName)}</div>${preview}`;
+    frag.appendChild(div);
+  });
+  el.innerHTML = '';
+  el.appendChild(frag);
 }
 
 async function fetchFeed(src){
+  // Check RSS cache first
+  if(rssCache[src.name] && Date.now() - rssCache[src.name].ts < RSS_CACHE_TTL){
+    feedHealth[src.name] = 'cached';
+    return rssCache[src.name].items;
+  }
+
   feedHealth[src.name] = 'loading';
-  // Try primary proxy, then fallback
   for(let pi = 0; pi < PROXIES.length; pi++){
     try{
       const proxyUrl = PROXIES[pi](src.url);
       const r = await fetch(proxyUrl, {signal:AbortSignal.timeout(12000)});
       if(pi === 0){
-        // rss2json returns JSON
         const d = await r.json();
         if(d.status === 'ok' && d.items && d.items.length){
           feedsLoaded++;
@@ -793,10 +866,10 @@ async function fetchFeed(src){
           DOM.sysFeeds.textContent = `FEEDS: ${feedsLoaded}/${totalFeeds}`;
           const items = d.items.map(i=>({...i,sourceName:src.name}));
           items.forEach(item => checkItemAgainstWatchlist(item, 'rss'));
+          rssCache[src.name] = {items, ts:Date.now()};
           return items;
         }
       } else {
-        // allorigins returns raw XML, parse it
         const text = await r.text();
         const parser = new DOMParser();
         const xml = parser.parseFromString(text, 'text/xml');
@@ -813,63 +886,100 @@ async function fetchFeed(src){
             return {title, link, pubDate, description:desc, sourceName:src.name};
           });
           items.forEach(item => checkItemAgainstWatchlist(item, 'rss'));
+          rssCache[src.name] = {items, ts:Date.now()};
           return items;
         }
       }
     }catch(e){/* try next proxy */}
   }
   feedHealth[src.name] = 'fail';
+  // On failure, return stale cache if available
+  if(rssCache[src.name]){
+    feedHealth[src.name] = 'cached';
+    return rssCache[src.name].items;
+  }
   console.warn('All proxies failed for:', src.name);
   return[];
 }
 
 async function loadAllFeeds(){
-  feedsLoaded=0; allItems=[];
+  feedsLoaded=0;
+  seenTitles.clear();
+
   // Initialize health dots
   Object.entries(feedConfig).forEach(([key,sources]) => {
-    sources.forEach(s => { feedHealth[s.name] = 'loading'; });
+    sources.forEach(s => {
+      if(feedHealth[s.name] !== 'cached') feedHealth[s.name] = 'loading';
+    });
     renderFeedHealth(key, sources);
   });
 
-  const promises = {};
-  for(const[key,sources]of Object.entries(feedConfig)){
-    promises[key] = Promise.allSettled(sources.map(fetchFeed));
-  }
-  for(const[key,promise]of Object.entries(promises)){
+  // Fetch all panels concurrently but with per-panel concurrency limit of 4
+  const panelResults = {};
+  const panelPromises = Object.entries(feedConfig).map(async ([key, sources]) => {
+    const results = await asyncPool(4, sources, fetchFeed);
+    panelResults[key] = results;
+  });
+  await Promise.all(panelPromises);
+
+  // Render results
+  allItems = [];
+  for(const [key, results] of Object.entries(panelResults)){
     const el = key==='world' ? DOM.feedWorld : DOM.feedSec;
     const updatedEl = key==='world' ? DOM.updatedWorld : DOM.updatedSec;
     if(!el) continue;
-    const results = await promise;
     let items = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
+    items = deduplicateItems(items);
     items.sort((a,b) => new Date(b.pubDate) - new Date(a.pubDate));
     allItems.push(...items);
-    el.innerHTML = items.map(feedItemHTML).join('');
-    DOM.sysItems.textContent = `ITEMS: ${allItems.length}`;
+    renderFeedPanel(el, items);
     updatedEl.textContent = timeStamp();
     renderFeedHealth(key, feedConfig[key]);
   }
+  // Cap total items
+  if(allItems.length > MAX_ITEMS) allItems.length = MAX_ITEMS;
+  DOM.sysFeeds.textContent = `FEEDS: ${feedsLoaded}/${totalFeeds}`;
+  DOM.sysItems.textContent = `ITEMS: ${allItems.length}`;
   buildTicker();
   detectBreakingNews();
   renderAlerts();
 }
 
+// ── Search with caching ──
+const searchCache = {}; // {query: {items:[], ts:number}}
+const SEARCH_CACHE_TTL = 120000;
+
 async function searchFeeds(query){
   DOM.feedWorld.innerHTML = DOM.feedSec.innerHTML = `<div class="feed-searching">Searching for "${query}"...</div>`;
-  const gnUrl=`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
-  let gnItems=[];
-  try{
-    const r=await fetch(PROXIES[0](gnUrl),{signal:AbortSignal.timeout(10000)});
-    const d=await r.json();
-    if(d.status==='ok')gnItems=d.items.map(i=>({...i,sourceName:'Google News'}));
-  }catch(e){}
+
+  // Check search cache for Google News results
+  let gnItems = [];
+  const cacheKey = query.toLowerCase().trim();
+  if(searchCache[cacheKey] && Date.now() - searchCache[cacheKey].ts < SEARCH_CACHE_TTL){
+    gnItems = searchCache[cacheKey].items;
+  } else {
+    const gnUrl=`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
+    try{
+      const r=await fetch(PROXIES[0](gnUrl),{signal:AbortSignal.timeout(10000)});
+      const d=await r.json();
+      if(d.status==='ok') gnItems=d.items.map(i=>({...i,sourceName:'Google News'}));
+      searchCache[cacheKey] = {items: gnItems, ts: Date.now()};
+    }catch(e){}
+  }
+
   const q=query.toLowerCase();
   const filtered=allItems.filter(i=>(i.title+' '+(i.description||'')+' '+i.sourceName).toLowerCase().includes(q));
   const seen=new Set();
   const deduped=[...gnItems,...filtered].filter(i=>{const k=(i.title||'').toLowerCase().substring(0,50);if(seen.has(k))return false;seen.add(k);return true});
   deduped.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
   const half=Math.ceil(deduped.length/2);
-  DOM.feedWorld.innerHTML=deduped.length?deduped.slice(0,half).map(feedItemHTML).join(''):'<div class="feed-no-results">No results</div>';
-  DOM.feedSec.innerHTML=deduped.slice(half).map(feedItemHTML).join('');
+  if(deduped.length){
+    renderFeedPanel(DOM.feedWorld, deduped.slice(0,half));
+    renderFeedPanel(DOM.feedSec, deduped.slice(half));
+  } else {
+    DOM.feedWorld.innerHTML = '<div class="feed-no-results">No results</div>';
+    DOM.feedSec.innerHTML = '';
+  }
   DOM.titleWorld.textContent=`Results: "${query}" (1)`;
   DOM.titleSec.textContent=`Results: "${query}" (2)`;
   DOM.filterCount.textContent=`${deduped.length} results`;
@@ -877,10 +987,8 @@ async function searchFeeds(query){
 
 function buildTicker(){
   const sorted=[...allItems].sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate)).slice(0,40);
-  // Interleave RSS headlines with Bluesky posts
-  const rssEntries = sorted.map(i => `<span><span class="ticker-src">${i.sourceName}</span> ${escapeAttr(stripHTML(i.title))}</span>`);
-  const bskyEntries = bskyTickerPosts.slice(0,10).map(p => `<span><span class="ticker-bsky">@${p.handle}</span> ${escapeAttr(p.text.substring(0,120))}</span>`);
-  // Merge: every 4th item is a Bluesky post
+  const rssEntries = sorted.map(i => `<span><span class="ticker-src">${escapeAttr(i.sourceName)}</span> ${escapeAttr(stripHTML(i.title))}</span>`);
+  const bskyEntries = bskyTickerPosts.slice(0,10).map(p => `<span><span class="ticker-bsky">@${escapeAttr(p.handle)}</span> ${escapeAttr(p.text.substring(0,120))}</span>`);
   const merged = [];
   let bi = 0;
   for(let i = 0; i < rssEntries.length; i++){
@@ -889,7 +997,6 @@ function buildTicker(){
       merged.push(bskyEntries[bi++]);
     }
   }
-  // Add remaining Bluesky
   while(bi < bskyEntries.length) merged.push(bskyEntries[bi++]);
   DOM.ticker.innerHTML = merged.join('<span class="ticker-sep">&#x25C6;</span>');
 }
@@ -929,23 +1036,35 @@ document.addEventListener('keydown',e=>{
   const n=parseInt(e.key);
   if(n>=1&&n<=9&&n<=channels.length){openChannel(n-1);return}
   if(e.key==='0'&&channels.length>=10){openChannel(9);return}
-  if(e.key==='r'||e.key==='R'){activeSearch?executeSearch():(loadAllFeeds(),loadBskyAll())}
+  if(e.key==='r'||e.key==='R'){activeSearch?executeSearch():(invalidateCaches(),loadAllFeeds(),loadBskyAll())}
   else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
   else if(e.key==='/'){e.preventDefault();DOM.filterInput.focus()}
   else if(e.key==='Escape')clearFilter();
 });
 
-// ── Init + auto-refresh ──
+// ── Cache invalidation for manual refresh ──
+function invalidateCaches(){
+  Object.keys(rssCache).forEach(k => delete rssCache[k]);
+  Object.keys(bskyCache).forEach(k => delete bskyCache[k]);
+  Object.keys(searchCache).forEach(k => delete searchCache[k]);
+}
+
+// ── Init + staggered auto-refresh ──
 loadAllFeeds();
-// Refresh both RSS and Bluesky every 5 minutes
+
+// RSS refresh every 5 minutes, Bluesky offset by 2.5 minutes to avoid simultaneous load
 setInterval(()=>{
-  if(!activeSearch){
-    loadAllFeeds();
-    // Clear bsky cache so it re-fetches
-    Object.keys(bskyCache).forEach(k => delete bskyCache[k]);
-    loadBskyAll();
-  }
+  if(!activeSearch) loadAllFeeds();
 }, 300000);
+
+setTimeout(() => {
+  setInterval(()=>{
+    if(!activeSearch){
+      Object.keys(bskyCache).forEach(k => delete bskyCache[k]);
+      loadBskyAll();
+    }
+  }, 300000);
+}, 150000); // Offset Bluesky refresh by 2.5 minutes
 </script>
 </body>
 </html>
