@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SITUATION ROOM // OSINT DASHBOARD</title>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   :root{
@@ -51,6 +52,8 @@
   .feed-item-time{font-size:9px;color:var(--blue-bright);font-family:'Courier New',monospace}
   .feed-item-title{font-size:13px;line-height:1.4;color:var(--yellow);margin-top:1px}
   .feed-item-source{font-size:9px;color:var(--yellow-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+  #win-security .win-titlebar{background:linear-gradient(90deg,#2a1a5a,#4a2a8a)}
+  #win-security .feed-item-source{color:#b388ff}
   .feed-searching{padding:12px;text-align:center;color:var(--yellow-dim);font-style:italic;font-size:12px}
   .feed-no-results{padding:12px;text-align:center;color:var(--yellow-dim);font-size:11px}
   .channels-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow-y:auto;padding:6px;gap:4px}
@@ -125,7 +128,7 @@
         <div class="clock-item"><div class="clock-label">TOKYO</div><div class="clock-time" id="ck-tyo"></div></div>
       </div>
       <div class="sys-stats">
-        <span id="sys-feeds">FEEDS: 0/12</span>
+        <span id="sys-feeds">FEEDS: 0/14</span>
         <span id="sys-items">ITEMS: 0</span>
         <span id="sys-uptime">UP 00:00:00</span>
       </div>
@@ -350,38 +353,63 @@ function renderXTweets(items, handle) {
   }).join('');
 }
 
+let widgetsReady = false;
+// Detect when widgets.js loads
+(function waitWidgets(){
+  if(window.twttr&&twttr.widgets&&twttr.widgets.createTimeline){widgetsReady=true;return}
+  if(Date.now()-performance.timeOrigin>8000)return; // give up after 8s
+  setTimeout(waitWidgets,500);
+})();
+
 async function loadXFeed(handle) {
   DOM.xArea.innerHTML = '<div class="x-loading">Loading @' + handle + '...</div>';
   DOM.xTitle.textContent = `X / @${handle}`;
 
-  // Try RSS bridges first
+  // Attempt 1: widgets.js (works best on HTTPS domains)
+  if(widgetsReady){
+    try{
+      DOM.xArea.innerHTML='';
+      const el=await twttr.widgets.createTimeline(
+        {sourceType:'profile',screenName:handle},
+        DOM.xArea,
+        {theme:'dark',chrome:'noheader nofooter noborders transparent',height:DOM.xArea.clientHeight||600}
+      );
+      if(el)return; // success
+    }catch(e){console.warn('widgets.js failed for',handle,e)}
+  }
+
+  // Attempt 2: syndication iframe
+  tryIframeFallback(handle);
+}
+
+function tryIframeFallback(handle) {
+  DOM.xArea.innerHTML = '';
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${handle}?dnt=true&embedId=tw-${Date.now()}&hideBorder=true&hideFooter=true&hideHeader=true&hideScrollBar=false&lang=en&theme=dark`;
+  iframe.sandbox = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
+  iframe.style.cssText = 'width:100%;height:100%;border:none';
+  iframe.loading = 'lazy';
+  DOM.xArea.appendChild(iframe);
+  const timer = setTimeout(()=>tryRSSFallback(handle), 10000);
+  iframe.onload = () => {
+    clearTimeout(timer);
+    try {
+      const doc = iframe.contentDocument;
+      if(doc&&doc.body&&(doc.body.innerText.length<50||doc.body.innerText.includes('Rate limit'))) tryRSSFallback(handle);
+    } catch(e){/* cross-origin = loaded ok */}
+  };
+  iframe.onerror = () => { clearTimeout(timer); tryRSSFallback(handle); };
+}
+
+async function tryRSSFallback(handle) {
+  // Attempt 3: RSS bridges
   const items = await fetchXRSS(handle);
   if (items && items.length > 0) {
     renderXTweets(items, handle);
     return;
   }
-
-  // Fallback: syndication iframe
-  tryIframeFallback(handle);
-}
-
-function tryIframeFallback(handle) {
-  const url = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${handle}?dnt=true&embedId=tw-${Date.now()}&hideBorder=true&hideFooter=true&hideHeader=true&hideScrollBar=false&lang=en&theme=dark`;
-  DOM.xArea.innerHTML = '';
-  const iframe = document.createElement('iframe');
-  iframe.src = url;
-  iframe.sandbox = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
-  iframe.style.cssText = 'width:100%;height:100%;border:none';
-  DOM.xArea.appendChild(iframe);
-  // If iframe doesn't load within 8s, show card fallback
-  const timer = setTimeout(()=>showCardFallback(), 8000);
-  iframe.onload = () => {
-    clearTimeout(timer);
-    try {
-      const doc = iframe.contentDocument;
-      if(doc&&doc.body&&doc.body.innerText.length<50) showCardFallback();
-    } catch(e){/* cross-origin, assume loaded */}
-  };
+  // Attempt 4: clickable cards
+  showCardFallback();
 }
 
 function showCardFallback(){
@@ -406,24 +434,29 @@ function loadXSearch(query) {
 }
 
 renderXTabs();
-loadXFeed(xAccounts[0].handle);
+// Give widgets.js a moment to load before first attempt
+setTimeout(()=>loadXFeed(xAccounts[0].handle), 2000);
 
 // ── RSS feeds — parallel loading ──
+// World News: mainstream breaking news from wire services & major outlets
+// Security & OSINT: niche intel, conflict analysis, investigations — NOT general news
 const feedConfig = {
   world: [
     {name:'BBC World',url:'https://feeds.bbci.co.uk/news/world/rss.xml'},
     {name:'Al Jazeera',url:'https://www.aljazeera.com/xml/rss/all.xml'},
-    {name:'The Guardian',url:'https://www.theguardian.com/world/rss'},
+    {name:'Reuters',url:'https://feeds.reuters.com/reuters/worldNews'},
     {name:'NPR World',url:'https://feeds.npr.org/1004/rss.xml'},
-    {name:'AP News',url:'https://rsshub.app/apnews/topics/world-news'},
-    {name:'Reuters',url:'https://rsshub.app/reuters/world'},
+    {name:'The Guardian',url:'https://www.theguardian.com/world/rss'},
+    {name:'France 24',url:'https://www.france24.com/en/rss'},
   ],
   security: [
     {name:'Bellingcat',url:'https://www.bellingcat.com/feed/'},
     {name:'War on the Rocks',url:'https://warontherocks.com/feed/'},
-    {name:'Defense One',url:'https://www.defenseone.com/rss/'},
     {name:'Lawfare',url:'https://www.lawfaremedia.org/feed'},
-    {name:'BBC Politics',url:'https://feeds.bbci.co.uk/news/politics/rss.xml'},
+    {name:'The War Zone',url:'https://www.thedrive.com/the-war-zone/feed'},
+    {name:'CSIS',url:'https://www.csis.org/analysis/feed'},
+    {name:'ICG',url:'https://www.crisisgroup.org/feed/rss'},
+    {name:'RUSI',url:'https://www.rusi.org/rss.xml'},
     {name:'Foreign Policy',url:'https://foreignpolicy.com/feed/'},
   ],
 };
