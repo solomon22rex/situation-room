@@ -839,22 +839,26 @@ function detectBreakingNews(){
 
 // ── Live channels with collapsible view (Feature #6) ──
 const channels = [
+  // ── Middle East ──
   {name:'Al Jazeera English',handle:'AlJazeeraEnglish',desc:'24/7 — strongest Middle East coverage',region:'ME'},
-  {name:'France 24 (FR)',handle:'france24',desc:'24/7 — French language, Africa/EU/ME',region:'EU'},
+  {name:'i24NEWS',handle:'i24NEWS_EN',desc:'24/7 — Israel-based English',region:'ME'},
+  {name:'TRT World',handle:'TRTWorld',desc:'24/7 — Turkish state intl',region:'ME'},
+  // ── Europe ──
+  {name:'France 24 English',handle:'FRANCE24English',desc:'24/7 — France, Africa/EU/ME coverage',region:'EU'},
   {name:'Sky News',handle:'SkyNews',desc:'24/7 — UK-based, fast breaking',region:'UK'},
   {name:'DW News',handle:'DWNews',desc:'24/7 — German intl, Europe/Asia',region:'EU'},
-  {name:'euronews',handle:'euronews',desc:'24/7 — Pan-European multi-perspective',region:'EU'},
-  {name:'TRT World',handle:'TRTWorld',desc:'24/7 — Turkish state intl',region:'ME'},
-  {name:'CNA',handle:'channelnewsasia',desc:'24/7 — Singapore, Asia-Pacific',region:'APAC'},
-  {name:'i24NEWS',handle:'i24NEWS_EN',desc:'Israel-based English',region:'ME'},
+  {name:'BBC News',handle:'BBCNews',desc:'24/7 — UK public broadcaster',region:'UK'},
+  // ── US ──
+  {name:'LiveNOW from FOX',handle:'LiveNOWfromFOX',desc:'24/7 — Fox live news stream (not opinion)',region:'US'},
+  {name:'CBS News',handle:'CBSNews',desc:'24/7 — US network news live',region:'US'},
+  {name:'NBC News NOW',handle:'NBCNews',desc:'24/7 — NBC streaming news',region:'US'},
+  {name:'ABC News Live',handle:'ABCNews',desc:'24/7 — ABC streaming coverage',region:'US'},
+  // ── Asia-Pacific ──
   {name:'WION',handle:'WION',desc:'24/7 — India, global news',region:'APAC'},
   {name:'NHK World-Japan',handle:'NHKWORLDJAPAN',desc:'24/7 — Japan, Asia coverage',region:'APAC'},
-  {name:'CNN',handle:'CNN',desc:'24/7 — US-based global news',region:'US'},
-  {name:'Fox News (LiveNOW)',handle:'LiveNOWfromFOX',desc:'24/7 — US breaking news live',region:'US'},
-  {name:'CBS News',handle:'CBSNews',desc:'24/7 — US network news',region:'US'},
-  {name:'BBC News',handle:'BBCNews',desc:'24/7 — UK public broadcaster',region:'UK'},
   {name:'NDTV',handle:'ndtv',desc:'24/7 — India, South Asia focus',region:'APAC'},
   {name:'ABC News AU',handle:'abcnewsaustralia',desc:'24/7 — Australian Broadcasting Corp',region:'APAC'},
+  // Note: CNN has no 24/7 YouTube live stream. RT is banned globally from YouTube.
 ];
 const openWindows = {};
 let channelsCompact = false;
@@ -1295,21 +1299,29 @@ function updateRegionHeatBar(){
 
 // ── Feature #9: Trending keywords strip ──
 function updateTrendingKeywords(){
-  const recentCutoff = Date.now() - 60*60*1000;
+  // Use 6-hour window (not 1h) so there's enough data to find trends
+  const recentCutoff = Date.now() - 6*60*60*1000;
   const wordFreq = {};
-  const excludeWords = new Set([...STOP_WORDS, 'news','world','report','reports','live','update','updates','latest','breaking','today','day','week','year','first','last','people','us','uk','time','back','two','three','also','more','could','would','trump']);
+  const excludeWords = new Set([...STOP_WORDS, 'news','world','report','reports','live','update','updates','latest','breaking','today','day','week','year','first','last','people','time','back','two','three','also','more','could','would','says','said','just','some','many','still','most','make','much','take','they','than','been','when','what','only','even','well','come','here','know','other','being','work','gets','amid','deal']);
+  // Include 3-letter words like "war", "oil", "idf" — but exclude noise
+  const shortExclude = new Set(['the','and','for','are','but','not','you','all','can','her','his','how','its','let','may','nor','own','too','use','way','who','why','yet','got','has','had','was','did','get','set','put','run','say','see','try','ask','big','old','few','top','end','off','ago','due']);
   allItems.forEach(item => {
     if(new Date(item.pubDate).getTime() < recentCutoff) return;
-    const words = (item.title||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w => w.length > 3 && !excludeWords.has(w));
+    const words = (item.title||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w => {
+      if(w.length < 3) return false;
+      if(w.length === 3) return !shortExclude.has(w) && !STOP_WORDS.has(w);
+      return w.length > 3 && !excludeWords.has(w);
+    });
     words.forEach(w => { wordFreq[w] = (wordFreq[w]||0) + 1; });
   });
-  const sorted = Object.entries(wordFreq).filter(([,c]) => c >= 3).sort((a,b) => b[1] - a[1]).slice(0,12);
+  // Lower threshold to 2 mentions (was 3)
+  const sorted = Object.entries(wordFreq).filter(([,c]) => c >= 2).sort((a,b) => b[1] - a[1]).slice(0,15);
   if(!sorted.length){
     DOM.trendingStrip.innerHTML = '<span class="trending-label">TRENDING:</span><span style="font-size:9px;color:var(--yellow-dim);font-style:italic">Collecting data...</span>';
     return;
   }
   DOM.trendingStrip.innerHTML = '<span class="trending-label">TRENDING:</span>' +
-    sorted.map(([word,count]) => `<span class="trending-kw" onclick="DOM.filterInput.value='${escapeAttr(word)}';executeSearch()" title="${count} mentions">${word} (${count})</span>`).join('');
+    sorted.map(([word,count]) => `<span class="trending-kw" onclick="DOM.filterInput.value='${escapeAttr(word)}';executeSearch()" title="${count} mentions in last 6h">${word} (${count})</span>`).join('');
 }
 
 // ── Feature #15: Auto-generated situation summary ──
