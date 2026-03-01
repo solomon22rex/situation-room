@@ -4,192 +4,107 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SITUATION ROOM // OSINT DASHBOARD</title>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --bg: #0a1a3a; --bg-deep: #060e20;
-    --yellow: #ffd700; --yellow-dim: #b89a00; --yellow-pale: #ffe066;
-    --blue-electric: #1e90ff; --blue-bright: #4db8ff;
-    --blue-dark: #0a2a5a; --blue-panel: rgba(10, 30, 70, 0.92);
-    --red: #ff3333; --white: #f0f0f0;
-    --border: rgba(255, 215, 0, 0.25); --border-bright: rgba(255, 215, 0, 0.5);
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0a1a3a;--bg-deep:#060e20;
+    --yellow:#ffd700;--yellow-dim:#b89a00;
+    --blue-bright:#4db8ff;--blue-dark:#0a2a5a;--blue-panel:rgba(10,30,70,.92);
+    --red:#ff3333;--border:rgba(255,215,0,.25);--border-bright:rgba(255,215,0,.5);
   }
-  body {
-    background: var(--bg); color: var(--yellow);
-    font-family: 'Times New Roman', Times, Georgia, serif;
-    overflow: hidden; height: 100vh; width: 100vw; user-select: none;
-  }
-
-  /* LAYOUT */
-  .dashboard { display: grid; grid-template-rows: auto 1fr 36px; height: 100vh; gap: 2px; background: var(--bg-deep); }
-
-  /* HEADER */
-  .header {
-    background: linear-gradient(180deg, #0d2a5c, #081a3a);
-    border-bottom: 1px solid var(--border-bright);
-    padding: 6px 16px; display: flex; align-items: center;
-    justify-content: space-between; flex-wrap: wrap; gap: 8px;
-  }
-  .logo-area { display: flex; align-items: center; gap: 14px; }
-  .logo { font-size: 20px; font-weight: bold; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,215,0,0.4); }
-  .status-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #66ff66; }
-  .dot-live { width: 7px; height: 7px; border-radius: 50%; background: #66ff66; animation: pulse 1.5s infinite; box-shadow: 0 0 5px #66ff66; }
-  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
-  .clocks { display: flex; gap: 16px; flex-wrap: wrap; }
-  .clock-item { text-align: center; }
-  .clock-label { font-size: 8px; color: var(--blue-bright); letter-spacing: 2px; text-transform: uppercase; font-family: Arial, sans-serif; }
-  .clock-time { font-size: 14px; font-weight: bold; }
-  .sys-stats { font-size: 10px; color: var(--yellow-dim); display: flex; gap: 10px; font-family: 'Courier New', monospace; }
-
-  /* FILTER BAR */
-  .filter-bar {
-    background: var(--blue-dark); border-bottom: 1px solid var(--border);
-    padding: 4px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-  }
-  .filter-bar label { font-size: 12px; color: var(--yellow-dim); letter-spacing: 1px; font-weight: bold; }
-  .filter-input {
-    background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--yellow);
-    font-family: 'Times New Roman', serif; font-size: 13px; padding: 3px 10px; width: 280px; outline: none;
-  }
-  .filter-input:focus { border-color: var(--yellow); box-shadow: 0 0 6px rgba(255,215,0,0.3); }
-  .filter-input::placeholder { color: var(--yellow-dim); opacity: 0.5; }
-  .filter-count { font-size: 10px; color: var(--blue-bright); font-family: 'Courier New', monospace; }
-  .filter-btn {
-    background: rgba(255,215,0,0.1); border: 1px solid var(--border); color: var(--yellow);
-    font-size: 10px; padding: 3px 10px; cursor: pointer; font-family: 'Times New Roman', serif; font-weight: bold;
-  }
-  .filter-btn:hover { background: rgba(255,215,0,0.2); border-color: var(--yellow); }
-  .filter-active-tag {
-    font-size: 10px; background: rgba(255,51,51,0.2); border: 1px solid var(--red);
-    color: var(--yellow); padding: 2px 8px; display: none; align-items: center; gap: 4px;
-  }
-  .filter-active-tag.show { display: flex; }
-
-  /* MAIN CONTENT */
-  .main-content { display: grid; grid-template-columns: 1fr 1fr 1.6fr 1.4fr; gap: 2px; overflow: hidden; min-height: 0; }
-
-  /* WINDOW PANELS */
-  .win {
-    background: var(--blue-panel); border: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden; min-height: 0;
-    transition: all 0.3s; position: relative;
-  }
-  .win.minimized { flex: 0 0 auto !important; max-height: 28px !important; overflow: hidden; }
-  .win.minimized .win-body, .win.minimized .channels-body,
-  .win.minimized .open-windows-bar, .win.minimized .x-embed-area,
-  .win.minimized .x-tabs { display: none; }
-  .win.maximized { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; z-index: 100; max-height: none !important; }
-  .win-titlebar {
-    background: linear-gradient(90deg, #1a3a7a, #2a5aaa);
-    padding: 4px 8px; display: flex; align-items: center;
-    justify-content: space-between; flex-shrink: 0; border-bottom: 1px solid var(--border);
-  }
-  .win-titlebar-text { font-size: 12px; font-weight: bold; color: var(--yellow); letter-spacing: 0.5px; }
-  .win-btns { display: flex; gap: 3px; }
-  .win-btn {
-    width: 18px; height: 16px; background: var(--blue-dark); border: 1px solid var(--border);
-    color: var(--yellow); font-size: 10px; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-family: Arial; padding: 0; line-height: 1;
-  }
-  .win-btn:hover { background: rgba(255,215,0,0.15); border-color: var(--yellow); }
-
-  /* FEED PANELS â scrollable with auto-scroll */
-  .win-body {
-    flex: 1; overflow-y: auto; position: relative; min-height: 0;
-    scroll-behavior: auto;
-  }
-  .feed-item {
-    padding: 6px 10px; border-bottom: 1px solid rgba(255,215,0,0.08);
-    cursor: pointer; transition: background 0.15s;
-  }
-  .feed-item:hover { background: rgba(255,215,0,0.07); }
-  .feed-item.hidden { display: none; }
-  .feed-item-time { font-size: 9px; color: var(--blue-bright); font-family: 'Courier New', monospace; }
-  .feed-item-title { font-size: 13px; line-height: 1.4; color: var(--yellow); margin-top: 1px; }
-  .feed-item-source { font-size: 9px; color: var(--yellow-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .feed-searching { padding: 12px; text-align: center; color: var(--yellow-dim); font-style: italic; font-size: 12px; }
-  .feed-no-results { padding: 12px; text-align: center; color: var(--yellow-dim); font-size: 11px; }
-
-  /* CHANNEL PANEL */
-  .channels-body { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; padding: 6px; gap: 4px; }
-  .channels-hint { font-size: 11px; color: var(--yellow-dim); padding: 4px 6px; font-style: italic; line-height: 1.4; }
-  .ch-card {
-    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-    background: rgba(0,0,0,0.25); border: 1px solid var(--border);
-    cursor: pointer; transition: all 0.2s;
-  }
-  .ch-card:hover { background: rgba(255,215,0,0.08); border-color: var(--yellow); transform: translateX(2px); }
-  .ch-num { font-size: 18px; font-weight: bold; color: var(--blue-bright); font-family: 'Courier New', monospace; width: 22px; text-align: center; flex-shrink: 0; }
-  .ch-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: pulse 1s infinite; box-shadow: 0 0 4px var(--red); flex-shrink: 0; }
-  .ch-info { flex: 1; min-width: 0; }
-  .ch-name { font-size: 14px; font-weight: bold; color: var(--yellow); }
-  .ch-desc { font-size: 10px; color: var(--yellow-dim); margin-top: 1px; }
-  .ch-key { font-size: 9px; color: var(--blue-bright); font-family: 'Courier New', monospace; background: rgba(77,184,255,0.1); border: 1px solid rgba(77,184,255,0.2); padding: 1px 5px; flex-shrink: 0; }
-  .open-windows-bar { padding: 6px; border-top: 1px solid var(--border); flex-shrink: 0; }
-  .open-windows-label { font-size: 9px; color: var(--blue-bright); letter-spacing: 2px; text-transform: uppercase; font-family: Arial; margin-bottom: 4px; }
-  .open-windows-list { display: flex; flex-wrap: wrap; gap: 3px; }
-  .open-win-tag { font-size: 9px; background: rgba(255,51,51,0.15); border: 1px solid rgba(255,51,51,0.3); color: var(--yellow); padding: 2px 6px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
-  .open-win-tag .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--red); animation: pulse 1s infinite; }
-
-  /* X / TWITTER PANEL */
-  .x-tabs {
-    display: flex; flex-wrap: wrap; gap: 2px; padding: 3px 4px;
-    background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border); flex-shrink: 0;
-  }
-  .x-tab {
-    background: var(--blue-dark); border: 1px solid var(--border); color: var(--yellow-dim);
-    font-size: 9px; font-family: 'Times New Roman', serif; font-weight: bold;
-    padding: 2px 6px; cursor: pointer; white-space: nowrap;
-  }
-  .x-tab:hover { color: var(--yellow); border-color: var(--yellow); }
-  .x-tab.active { background: rgba(255,215,0,0.12); color: var(--yellow); border-color: var(--yellow); }
-  .x-embed-area {
-    flex: 1; overflow-y: auto; min-height: 0;
-    background: #000; position: relative;
-  }
-  .x-embed-area iframe { width: 100%; height: 100%; border: none; }
-  .x-loading { padding: 20px; text-align: center; color: var(--yellow-dim); font-style: italic; font-size: 11px; }
-  .x-fallback-cards { padding: 6px; display: flex; flex-direction: column; gap: 4px; }
-  .x-card {
-    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-    background: rgba(0,0,0,0.25); border: 1px solid var(--border);
-    cursor: pointer; transition: all 0.2s;
-  }
-  .x-card:hover { background: rgba(255,215,0,0.08); border-color: var(--yellow); transform: translateX(2px); }
-  .x-card-handle { font-size: 14px; font-weight: bold; color: var(--yellow); }
-  .x-card-label { font-size: 10px; color: var(--yellow-dim); }
-  .x-card-dot { width: 8px; height: 8px; border-radius: 50%; background: #1da1f2; flex-shrink: 0; }
-  .x-fallback-msg { font-size: 10px; color: var(--yellow-dim); padding: 8px 12px; line-height: 1.5; text-align: center; }
-  .x-search-note {
-    padding: 8px; font-size: 10px; color: var(--blue-bright);
-    background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border);
-    text-align: center; font-family: Arial, sans-serif; flex-shrink: 0; display: none;
-  }
-  .x-search-note.show { display: block; }
-
-  /* TICKER */
-  .ticker-bar {
-    display: flex; align-items: center;
-    background: linear-gradient(180deg, #0d2a5c, #081a3a);
-    border-top: 1px solid var(--border-bright); overflow: hidden;
-  }
-  .ticker-label { flex-shrink: 0; padding: 0 12px; font-weight: bold; font-size: 11px; letter-spacing: 2px; background: var(--red); color: white; height: 100%; display: flex; align-items: center; font-family: 'Courier New', monospace; }
-  .ticker-content { flex: 1; overflow: hidden; white-space: nowrap; padding-left: 8px; }
-  .ticker-scroll { display: inline-block; white-space: nowrap; animation: ticker-move 220s linear infinite; font-size: 13px; }
-  .ticker-scroll:hover { animation-play-state: paused; }
-  @keyframes ticker-move { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-  .ticker-src { color: var(--blue-bright); font-weight: bold; font-size: 10px; text-transform: uppercase; font-family: Arial; }
-  .ticker-sep { color: var(--yellow-dim); margin: 0 24px; }
-
-  .kbd-hint { position: fixed; bottom: 40px; right: 8px; font-size: 8px; color: rgba(255,215,0,0.25); z-index: 10; font-family: Arial; letter-spacing: 0.5px; }
-
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.2); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255,215,0,0.35); }
-
-  @media (max-width: 1200px) { .main-content { grid-template-columns: 1fr 2fr 1fr; } .main-content > .win:nth-child(2) { display: none; } }
+  body{background:var(--bg);color:var(--yellow);font-family:'Times New Roman',Times,Georgia,serif;overflow:hidden;height:100vh;width:100vw;user-select:none}
+  .dashboard{display:grid;grid-template-rows:auto 1fr 36px;height:100vh;gap:2px;background:var(--bg-deep)}
+  .header{background:linear-gradient(180deg,#0d2a5c,#081a3a);border-bottom:1px solid var(--border-bright);padding:6px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .logo-area{display:flex;align-items:center;gap:14px}
+  .logo{font-size:20px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 12px rgba(255,215,0,.4)}
+  .status-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:#66ff66}
+  .dot-live{width:7px;height:7px;border-radius:50%;background:#66ff66;animation:pulse 1.5s infinite;box-shadow:0 0 5px #66ff66}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .clocks{display:flex;gap:16px;flex-wrap:wrap}
+  .clock-item{text-align:center}
+  .clock-label{font-size:8px;color:var(--blue-bright);letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif}
+  .clock-time{font-size:14px;font-weight:bold}
+  .sys-stats{font-size:10px;color:var(--yellow-dim);display:flex;gap:10px;font-family:'Courier New',monospace}
+  .filter-bar{background:var(--blue-dark);border-bottom:1px solid var(--border);padding:4px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .filter-bar label{font-size:12px;color:var(--yellow-dim);letter-spacing:1px;font-weight:bold}
+  .filter-input{background:rgba(0,0,0,.4);border:1px solid var(--border);color:var(--yellow);font-family:'Times New Roman',serif;font-size:13px;padding:3px 10px;width:280px;outline:none}
+  .filter-input:focus{border-color:var(--yellow);box-shadow:0 0 6px rgba(255,215,0,.3)}
+  .filter-input::placeholder{color:var(--yellow-dim);opacity:.5}
+  .filter-count{font-size:10px;color:var(--blue-bright);font-family:'Courier New',monospace}
+  .filter-btn{background:rgba(255,215,0,.1);border:1px solid var(--border);color:var(--yellow);font-size:10px;padding:3px 10px;cursor:pointer;font-family:'Times New Roman',serif;font-weight:bold}
+  .filter-btn:hover{background:rgba(255,215,0,.2);border-color:var(--yellow)}
+  .filter-active-tag{font-size:10px;background:rgba(255,51,51,.2);border:1px solid var(--red);color:var(--yellow);padding:2px 8px;display:none;align-items:center;gap:4px}
+  .filter-active-tag.show{display:flex}
+  .main-content{display:grid;grid-template-columns:1fr 1fr 1.6fr 1.4fr;gap:2px;overflow:hidden;min-height:0}
+  .win{background:var(--blue-panel);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;transition:all .3s;position:relative}
+  .win.minimized{flex:0 0 auto!important;max-height:28px!important;overflow:hidden}
+  .win.minimized .win-body,.win.minimized .channels-body,.win.minimized .open-windows-bar,.win.minimized .x-embed-area,.win.minimized .x-tabs{display:none}
+  .win.maximized{position:fixed!important;top:0;left:0;right:0;bottom:0;z-index:100;max-height:none!important}
+  .win-titlebar{background:linear-gradient(90deg,#1a3a7a,#2a5aaa);padding:4px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border)}
+  .win-titlebar-text{font-size:12px;font-weight:bold;color:var(--yellow);letter-spacing:.5px}
+  .win-btns{display:flex;gap:3px}
+  .win-btn{width:18px;height:16px;background:var(--blue-dark);border:1px solid var(--border);color:var(--yellow);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Arial;padding:0;line-height:1}
+  .win-btn:hover{background:rgba(255,215,0,.15);border-color:var(--yellow)}
+  .win-body{flex:1;overflow-y:auto;position:relative;min-height:0;scroll-behavior:auto}
+  .feed-item{padding:6px 10px;border-bottom:1px solid rgba(255,215,0,.08);cursor:pointer;transition:background .15s}
+  .feed-item:hover{background:rgba(255,215,0,.07)}
+  .feed-item-time{font-size:9px;color:var(--blue-bright);font-family:'Courier New',monospace}
+  .feed-item-title{font-size:13px;line-height:1.4;color:var(--yellow);margin-top:1px}
+  .feed-item-source{font-size:9px;color:var(--yellow-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+  .feed-searching{padding:12px;text-align:center;color:var(--yellow-dim);font-style:italic;font-size:12px}
+  .feed-no-results{padding:12px;text-align:center;color:var(--yellow-dim);font-size:11px}
+  .channels-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow-y:auto;padding:6px;gap:4px}
+  .channels-hint{font-size:11px;color:var(--yellow-dim);padding:4px 6px;font-style:italic;line-height:1.4}
+  .ch-card{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(0,0,0,.25);border:1px solid var(--border);cursor:pointer;transition:all .2s}
+  .ch-card:hover{background:rgba(255,215,0,.08);border-color:var(--yellow);transform:translateX(2px)}
+  .ch-num{font-size:18px;font-weight:bold;color:var(--blue-bright);font-family:'Courier New',monospace;width:22px;text-align:center;flex-shrink:0}
+  .ch-live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1s infinite;box-shadow:0 0 4px var(--red);flex-shrink:0}
+  .ch-info{flex:1;min-width:0}
+  .ch-name{font-size:14px;font-weight:bold;color:var(--yellow)}
+  .ch-desc{font-size:10px;color:var(--yellow-dim);margin-top:1px}
+  .ch-key{font-size:9px;color:var(--blue-bright);font-family:'Courier New',monospace;background:rgba(77,184,255,.1);border:1px solid rgba(77,184,255,.2);padding:1px 5px;flex-shrink:0}
+  .open-windows-bar{padding:6px;border-top:1px solid var(--border);flex-shrink:0}
+  .open-windows-label{font-size:9px;color:var(--blue-bright);letter-spacing:2px;text-transform:uppercase;font-family:Arial;margin-bottom:4px}
+  .open-windows-list{display:flex;flex-wrap:wrap;gap:3px}
+  .open-win-tag{font-size:9px;background:rgba(255,51,51,.15);border:1px solid rgba(255,51,51,.3);color:var(--yellow);padding:2px 6px;display:flex;align-items:center;gap:4px;cursor:pointer}
+  .open-win-tag .dot{width:4px;height:4px;border-radius:50%;background:var(--red);animation:pulse 1s infinite}
+  .x-tabs{display:flex;flex-wrap:wrap;gap:2px;padding:3px 4px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);flex-shrink:0}
+  .x-tab{background:var(--blue-dark);border:1px solid var(--border);color:var(--yellow-dim);font-size:9px;font-family:'Times New Roman',serif;font-weight:bold;padding:2px 6px;cursor:pointer;white-space:nowrap}
+  .x-tab:hover{color:var(--yellow);border-color:var(--yellow)}
+  .x-tab.active{background:rgba(255,215,0,.12);color:var(--yellow);border-color:var(--yellow)}
+  .x-embed-area{flex:1;overflow-y:auto;min-height:0;background:#000;position:relative}
+  .x-embed-area iframe{width:100%;height:100%;border:none}
+  .x-loading{padding:20px;text-align:center;color:var(--yellow-dim);font-style:italic;font-size:11px}
+  .x-fallback-cards{padding:6px;display:flex;flex-direction:column;gap:4px}
+  .x-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,0,0,.25);border:1px solid var(--border);cursor:pointer;transition:all .2s}
+  .x-card:hover{background:rgba(255,215,0,.08);border-color:var(--yellow);transform:translateX(2px)}
+  .x-card-handle{font-size:14px;font-weight:bold;color:var(--yellow)}
+  .x-card-label{font-size:10px;color:var(--yellow-dim)}
+  .x-card-dot{width:8px;height:8px;border-radius:50%;background:#1da1f2;flex-shrink:0}
+  .x-fallback-msg{font-size:10px;color:var(--yellow-dim);padding:8px 12px;line-height:1.5;text-align:center}
+  .x-search-note{padding:8px;font-size:10px;color:var(--blue-bright);background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);text-align:center;font-family:Arial,sans-serif;flex-shrink:0;display:none}
+  .x-search-note.show{display:block}
+  .x-tweet{padding:8px 10px;border-bottom:1px solid rgba(29,161,242,.15);cursor:pointer;transition:background .15s}
+  .x-tweet:hover{background:rgba(29,161,242,.08)}
+  .x-tweet-header{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+  .x-tweet-avatar{width:6px;height:6px;border-radius:50%;background:#1da1f2;flex-shrink:0}
+  .x-tweet-handle{font-size:10px;color:#1da1f2;font-weight:bold}
+  .x-tweet-time{font-size:9px;color:var(--yellow-dim);font-family:'Courier New',monospace;margin-left:auto}
+  .x-tweet-text{font-size:12px;line-height:1.4;color:var(--yellow)}
+  .ticker-bar{display:flex;align-items:center;background:linear-gradient(180deg,#0d2a5c,#081a3a);border-top:1px solid var(--border-bright);overflow:hidden}
+  .ticker-label{flex-shrink:0;padding:0 12px;font-weight:bold;font-size:11px;letter-spacing:2px;background:var(--red);color:white;height:100%;display:flex;align-items:center;font-family:'Courier New',monospace}
+  .ticker-content{flex:1;overflow:hidden;white-space:nowrap;padding-left:8px}
+  .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 220s linear infinite;font-size:13px}
+  .ticker-scroll:hover{animation-play-state:paused}
+  @keyframes ticker-move{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
+  .ticker-src{color:var(--blue-bright);font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
+  .ticker-sep{color:var(--yellow-dim);margin:0 24px}
+  .kbd-hint{position:fixed;bottom:40px;right:8px;font-size:8px;color:rgba(255,215,0,.25);z-index:10;font-family:Arial;letter-spacing:.5px}
+  ::-webkit-scrollbar{width:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(255,215,0,.2);border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(255,215,0,.35)}
+  @media(max-width:1200px){.main-content{grid-template-columns:1fr 2fr 1fr}.main-content>.win:nth-child(2){display:none}}
 </style>
 </head>
 <body>
@@ -210,7 +125,7 @@
         <div class="clock-item"><div class="clock-label">TOKYO</div><div class="clock-time" id="ck-tyo"></div></div>
       </div>
       <div class="sys-stats">
-        <span id="sys-feeds">FEEDS: 0/16</span>
+        <span id="sys-feeds">FEEDS: 0/12</span>
         <span id="sys-items">ITEMS: 0</span>
         <span id="sys-uptime">UP 00:00:00</span>
       </div>
@@ -220,13 +135,11 @@
       <input class="filter-input" id="filter-input" type="text" placeholder="Type topic + Enter to search all feeds & X (e.g. iran, nuclear, ukraine)">
       <button class="filter-btn" onclick="executeSearch()">SEARCH</button>
       <span class="filter-count" id="filter-count"></span>
-      <span class="filter-active-tag" id="filter-tag">Searching: <b id="filter-tag-term"></b> <span style="cursor:pointer;margin-left:4px;" onclick="clearFilter()">&#10005;</span></span>
-      <button class="filter-btn" onclick="clearFilter()" style="margin-left:auto;">CLEAR / SHOW ALL</button>
+      <span class="filter-active-tag" id="filter-tag">Searching: <b id="filter-tag-term"></b> <span style="cursor:pointer;margin-left:4px" onclick="clearFilter()">&#10005;</span></span>
+      <button class="filter-btn" onclick="clearFilter()" style="margin-left:auto">CLEAR / SHOW ALL</button>
     </div>
   </div>
-
   <div class="main-content" id="main-grid">
-    <!-- FEED 1 -->
     <div class="win" id="win-world">
       <div class="win-titlebar">
         <span class="win-titlebar-text" id="title-world">World News</span>
@@ -235,22 +148,18 @@
           <button class="win-btn" onclick="toggleMax('win-world')" title="Maximize">&#9633;</button>
         </div>
       </div>
-      <div class="win-body" id="feed-world" data-autoscroll="true"></div>
+      <div class="win-body" id="feed-world"></div>
     </div>
-
-    <!-- FEED 2 -->
     <div class="win" id="win-security">
       <div class="win-titlebar">
-        <span class="win-titlebar-text" id="title-security">Security & OSINT</span>
+        <span class="win-titlebar-text" id="title-security">Security &amp; OSINT</span>
         <div class="win-btns">
           <button class="win-btn" onclick="toggleMin('win-security')" title="Minimize">_</button>
           <button class="win-btn" onclick="toggleMax('win-security')" title="Maximize">&#9633;</button>
         </div>
       </div>
-      <div class="win-body" id="feed-security" data-autoscroll="true"></div>
+      <div class="win-body" id="feed-security"></div>
     </div>
-
-    <!-- CHANNELS -->
     <div class="win" id="win-video">
       <div class="win-titlebar">
         <span class="win-titlebar-text">Live Broadcast Channels</span>
@@ -263,12 +172,10 @@
       <div class="open-windows-bar">
         <div class="open-windows-label">Open Feeds</div>
         <div class="open-windows-list" id="open-windows-list">
-          <span style="font-size:10px;color:var(--yellow-dim);font-style:italic;">Click a channel above to open</span>
+          <span style="font-size:10px;color:var(--yellow-dim);font-style:italic">Click a channel above to open</span>
         </div>
       </div>
     </div>
-
-    <!-- X / TWITTER PANEL -->
     <div class="win" id="win-x">
       <div class="win-titlebar">
         <span class="win-titlebar-text" id="x-panel-title">X / Live Posts</span>
@@ -280,440 +187,360 @@
       <div class="x-tabs" id="x-tabs"></div>
       <div class="x-search-note" id="x-search-note"></div>
       <div class="x-embed-area" id="x-embed-area">
-        <div class="x-loading">Loading X timeline...</div>
+        <div class="x-loading">Loading X feeds...</div>
       </div>
     </div>
   </div>
-
   <div class="ticker-bar">
     <div class="ticker-label">BREAKING</div>
     <div class="ticker-content"><div class="ticker-scroll" id="ticker"></div></div>
   </div>
 </div>
-
 <div class="kbd-hint">1-0 channels &bull; R refresh &bull; F fullscreen &bull; / search &bull; ESC clear</div>
 
 <script>
-// ============================================
-// CLOCKS
-// ============================================
-const clockZones = [
-  ['ck-la','America/Los_Angeles'],['ck-nyc','America/New_York'],
-  ['ck-lon','Europe/London'],['ck-tlv','Asia/Jerusalem'],
-  ['ck-mow','Europe/Moscow'],['ck-bjs','Asia/Shanghai'],['ck-tyo','Asia/Tokyo']
-];
-function updateClocks() {
-  const now = new Date();
-  clockZones.forEach(([id,tz]) => {
-    document.getElementById(id).textContent = now.toLocaleTimeString('en-US',{timeZone:tz,hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+// ── Cached DOM refs ──
+const $ = id => document.getElementById(id);
+const DOM = {
+  feedWorld: $('feed-world'), feedSec: $('feed-security'),
+  titleWorld: $('title-world'), titleSec: $('title-security'),
+  sysFeeds: $('sys-feeds'), sysItems: $('sys-items'), sysUptime: $('sys-uptime'),
+  filterInput: $('filter-input'), filterCount: $('filter-count'),
+  filterTag: $('filter-tag'), filterTagTerm: $('filter-tag-term'),
+  xTabs: $('x-tabs'), xArea: $('x-embed-area'),
+  xTitle: $('x-panel-title'), xSearchNote: $('x-search-note'),
+  ticker: $('ticker'), channelsBody: $('channels-body'),
+  openWinList: $('open-windows-list'),
+  clocks: [['ck-la','America/Los_Angeles'],['ck-nyc','America/New_York'],
+    ['ck-lon','Europe/London'],['ck-tlv','Asia/Jerusalem'],
+    ['ck-mow','Europe/Moscow'],['ck-bjs','Asia/Shanghai'],['ck-tyo','Asia/Tokyo']]
+    .map(([id,tz])=>({el:$(id),tz}))
+};
+
+// ── Combined 1s tick: clocks + uptime ──
+const t0 = Date.now();
+function tick() {
+  const now = new Date(), s = Math.floor((Date.now()-t0)/1000);
+  DOM.clocks.forEach(({el,tz}) => {
+    el.textContent = now.toLocaleTimeString('en-US',{timeZone:tz,hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
   });
+  DOM.sysUptime.textContent = `UP ${String(s/3600|0).padStart(2,'0')}:${String(s%3600/60|0).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 }
-setInterval(updateClocks,1000); updateClocks();
+setInterval(tick, 1000); tick();
 
-const t0=Date.now();
-setInterval(()=>{
-  const s=Math.floor((Date.now()-t0)/1000);
-  document.getElementById('sys-uptime').textContent=`UP ${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-},1000);
+// ── Window controls ──
+function toggleMin(id){const el=$(id);el.classList.toggle('minimized');el.classList.remove('maximized')}
+function toggleMax(id){const el=$(id);el.classList.contains('maximized')?el.classList.remove('maximized'):(el.classList.remove('minimized'),el.classList.add('maximized'))}
 
-// ============================================
-// WINDOW CONTROLS
-// ============================================
-function toggleMin(id) { const el=document.getElementById(id); el.classList.toggle('minimized'); el.classList.remove('maximized'); }
-function toggleMax(id) { const el=document.getElementById(id); if(el.classList.contains('maximized')){el.classList.remove('maximized');}else{el.classList.remove('minimized');el.classList.add('maximized');} }
-
-// ============================================
-// AUTO-SCROLL with manual override
-// ============================================
-const scrollState = {};
-function initAutoScroll(panelId) {
-  const el = document.getElementById(panelId);
-  if (!el) return;
-  scrollState[panelId] = { paused: false, timer: null };
-
-  // On user scroll (wheel), pause auto-scroll for 8 seconds
-  el.addEventListener('wheel', () => {
-    scrollState[panelId].paused = true;
-    clearTimeout(scrollState[panelId].timer);
-    scrollState[panelId].timer = setTimeout(() => {
-      scrollState[panelId].paused = false;
-    }, 8000);
-  }, { passive: true });
+// ── Auto-scroll via rAF (more efficient than setInterval) ──
+const scrollPanels = [DOM.feedWorld, DOM.feedSec].filter(Boolean);
+const scrollPause = new Map();
+scrollPanels.forEach(el => {
+  scrollPause.set(el, 0);
+  el.addEventListener('wheel', () => { scrollPause.set(el, Date.now() + 8000); }, {passive:true});
+});
+let lastScroll = 0;
+function autoScroll(ts) {
+  if (ts - lastScroll > 50) {
+    lastScroll = ts;
+    const now = Date.now();
+    scrollPanels.forEach(el => {
+      if (now < scrollPause.get(el)) return;
+      el.scrollTop += 0.5;
+      if (el.scrollTop >= el.scrollHeight - el.clientHeight - 5) el.scrollTop = 0;
+    });
+  }
+  requestAnimationFrame(autoScroll);
 }
+requestAnimationFrame(autoScroll);
 
-// Run auto-scroll for all feed panels
-setInterval(() => {
-  ['feed-world','feed-security'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el || !scrollState[id] || scrollState[id].paused) return;
-    // Scroll down 1px
-    el.scrollTop += 0.5;
-    // Loop: if near bottom, jump back to top
-    if (el.scrollTop >= el.scrollHeight - el.clientHeight - 5) {
-      el.scrollTop = 0;
-    }
-  });
-}, 50);
-
-initAutoScroll('feed-world');
-initAutoScroll('feed-security');
-
-// ============================================
-// LIVE CHANNELS
-// ============================================
+// ── Live channels ──
 const channels = [
-  { name:'Al Jazeera English', handle:'AlJazeeraEnglish', desc:'24/7 â strongest Middle East coverage', region:'ME' },
-  { name:'France 24',          handle:'France24_en',      desc:'24/7 â French intl, strong Africa/EU', region:'EU' },
-  { name:'Sky News',           handle:'SkyNews',          desc:'24/7 â UK-based, fast breaking', region:'UK' },
-  { name:'DW News',            handle:'DWNews',           desc:'24/7 â German intl, Europe/Asia', region:'EU' },
-  { name:'euronews',           handle:'euronews',         desc:'24/7 â Pan-European multi-perspective', region:'EU' },
-  { name:'TRT World',          handle:'TRTWorld',         desc:'24/7 â Turkish state intl', region:'ME' },
-  { name:'CNA',                handle:'channelnewsasia',  desc:'24/7 â Singapore, Asia-Pacific', region:'APAC' },
-  { name:'i24NEWS',            handle:'i24NEWS_EN',       desc:'Israel-based English', region:'ME' },
-  { name:'WION',               handle:'WIONews',          desc:'India global news, South Asia', region:'APAC' },
-  { name:'NHK World',          handle:'NHKWORLD',         desc:'Japan, excellent Asia coverage', region:'APAC' },
+  {name:'Al Jazeera English',handle:'AlJazeeraEnglish',desc:'24/7 — strongest Middle East coverage',region:'ME'},
+  {name:'France 24',handle:'France24_en',desc:'24/7 — French intl, strong Africa/EU',region:'EU'},
+  {name:'Sky News',handle:'SkyNews',desc:'24/7 — UK-based, fast breaking',region:'UK'},
+  {name:'DW News',handle:'DWNews',desc:'24/7 — German intl, Europe/Asia',region:'EU'},
+  {name:'euronews',handle:'euronews',desc:'24/7 — Pan-European multi-perspective',region:'EU'},
+  {name:'TRT World',handle:'TRTWorld',desc:'24/7 — Turkish state intl',region:'ME'},
+  {name:'CNA',handle:'channelnewsasia',desc:'24/7 — Singapore, Asia-Pacific',region:'APAC'},
+  {name:'i24NEWS',handle:'i24NEWS_EN',desc:'Israel-based English',region:'ME'},
+  {name:'WION',handle:'WIONews',desc:'India global news, South Asia',region:'APAC'},
+  {name:'NHK World',handle:'NHKWORLD',desc:'Japan, excellent Asia coverage',region:'APAC'},
 ];
 const openWindows = {};
-function openChannel(i) {
-  const c=channels[i]; const url=`https://www.youtube.com/@${c.handle}/live`;
-  const left=100+(Object.keys(openWindows).length*30), top=80+(Object.keys(openWindows).length*30);
-  const win=window.open(url,`ch_${c.handle}`,`width=800,height=500,left=${left},top=${top},menubar=no,toolbar=no,location=yes,status=no`);
-  if(win){openWindows[c.handle]={name:c.name,win};updateOpenWins();const p=setInterval(()=>{if(win.closed){delete openWindows[c.handle];updateOpenWins();clearInterval(p);}},1000);}
+function openChannel(i){
+  const c=channels[i],url=`https://www.youtube.com/@${c.handle}/live`;
+  const n=Object.keys(openWindows).length;
+  const w=window.open(url,`ch_${c.handle}`,`width=800,height=500,left=${100+n*30},top=${80+n*30},menubar=no,toolbar=no,location=yes,status=no`);
+  if(w){openWindows[c.handle]={name:c.name,win:w};updateOpenWins();const p=setInterval(()=>{if(w.closed){delete openWindows[c.handle];updateOpenWins();clearInterval(p)}},2000)}
 }
-function focusChannel(h){if(openWindows[h]&&!openWindows[h].win.closed)openWindows[h].win.focus();}
+function focusChannel(h){if(openWindows[h]&&!openWindows[h].win.closed)openWindows[h].win.focus()}
 function updateOpenWins(){
-  const el=document.getElementById('open-windows-list');const hs=Object.keys(openWindows);
-  if(!hs.length){el.innerHTML='<span style="font-size:10px;color:var(--yellow-dim);font-style:italic;">Click a channel above to open</span>';return;}
-  el.innerHTML=hs.map(h=>`<span class="open-win-tag" onclick="focusChannel('${h}')"><span class="dot"></span>${openWindows[h].name}</span>`).join('');
+  const hs=Object.keys(openWindows);
+  DOM.openWinList.innerHTML=hs.length?hs.map(h=>`<span class="open-win-tag" onclick="focusChannel('${h}')"><span class="dot"></span>${openWindows[h].name}</span>`).join(''):'<span style="font-size:10px;color:var(--yellow-dim);font-style:italic">Click a channel above to open</span>';
 }
-function renderChannels(){
-  document.getElementById('channels-body').innerHTML=
-    `<div class="channels-hint">Click to open in popup window. Multiple channels can be open simultaneously. Keys 1-0 for quick launch.</div>`+
-    channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i<9?i+1:0}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
-}
-renderChannels();
+DOM.channelsBody.innerHTML=
+  '<div class="channels-hint">Click to open in popup window. Multiple channels can be open simultaneously. Keys 1-0 for quick launch.</div>'+
+  channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i<9?i+1:0}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
 
-// ============================================
-// X / TWITTER PANEL â multi-fallback embed
-// ============================================
+// ── X / Twitter panel — RSS + iframe + card fallback ──
 const xAccounts = [
-  { handle:'OSINTdefender', label:'OSINT Def' },
-  { handle:'sentdefender',  label:'Sentinel' },
-  { handle:'IntelCrab',     label:'IntelCrab' },
-  { handle:'OSInt613',      label:'OSINT 613' },
-  { handle:'Faytuks',       label:'Faytuks' },
-  { handle:'Charles_Lister', label:'C.Lister' },
-  { handle:'RALee85',       label:'R.Lee' },
-  { handle:'Jason_R_Brodsky', label:'Brodsky' },
-  { handle:'MiddleEastEye', label:'MEE' },
+  {handle:'OSINTdefender',label:'OSINT Def'},
+  {handle:'sentdefender',label:'Sentinel'},
+  {handle:'IntelCrab',label:'IntelCrab'},
+  {handle:'OSINTtechnical',label:'OSINTtech'},
+  {handle:'Faytuks',label:'Faytuks'},
+  {handle:'Charles_Lister',label:'C.Lister'},
+  {handle:'RALee85',label:'R.Lee'},
+  {handle:'Jason_R_Brodsky',label:'Brodsky'},
+  {handle:'MiddleEastEye',label:'MEE'},
+];
+let currentXTab = 0, xSearchMode = false;
+const xCache = {}; // Cache fetched X RSS data per handle
+
+const PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+// Multiple Nitter/RSS bridge instances to try (in order)
+const X_RSS_BRIDGES = [
+  handle => `https://rsshub.app/twitter/user/${handle}`,
+  handle => `https://nitter.privacydev.net/${handle}/rss`,
+  handle => `https://nitter.poast.org/${handle}/rss`,
 ];
 
-let currentXTab = 0;
-let xSearchMode = false;
-let widgetsReady = false;
-
-// Detect when widgets.js is loaded
-function waitForWidgets(cb, maxWait) {
-  const start = Date.now();
-  (function check() {
-    if (window.twttr && twttr.widgets && twttr.widgets.createTimeline) {
-      widgetsReady = true; cb(true);
-    } else if (Date.now() - start > maxWait) {
-      cb(false);
-    } else {
-      setTimeout(check, 300);
-    }
-  })();
-}
-
-function renderXTabs() {
-  const el = document.getElementById('x-tabs');
-  el.innerHTML = xAccounts.map((a,i) =>
-    `<button class="x-tab ${!xSearchMode && i===currentXTab?'active':''}" onclick="selectXAccount(${i})">${a.label}</button>`
+function renderXTabs(){
+  DOM.xTabs.innerHTML = xAccounts.map((a,i)=>
+    `<button class="x-tab ${!xSearchMode&&i===currentXTab?'active':''}" onclick="selectXAccount(${i})">${a.label}</button>`
   ).join('');
 }
 
-function selectXAccount(i) {
-  currentXTab = i;
-  xSearchMode = false;
-  document.getElementById('x-search-note').classList.remove('show');
+function selectXAccount(i){
+  currentXTab=i; xSearchMode=false;
+  DOM.xSearchNote.classList.remove('show');
   renderXTabs();
-  loadXTimeline(xAccounts[i].handle);
+  loadXFeed(xAccounts[i].handle);
 }
 
-// Attempt 1: widgets.js createTimeline (works on served pages)
-// Attempt 2: syndication iframe (works everywhere but can rate-limit)
-// Attempt 3: clickable cards to open X in popup windows
-function loadXTimeline(handle) {
-  const area = document.getElementById('x-embed-area');
-  area.innerHTML = '<div class="x-loading">Loading @' + handle + '...</div>';
-  document.getElementById('x-panel-title').textContent = `X / @${handle}`;
+function timeAgo(d){const m=Math.floor((Date.now()-new Date(d).getTime())/60000);if(m<1)return'NOW';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return(h/24|0)+'d'}
 
-  if (widgetsReady) {
-    area.innerHTML = '';
-    twttr.widgets.createTimeline(
-      { sourceType: 'profile', screenName: handle },
-      area,
-      { theme: 'dark', chrome: 'noheader nofooter noborders transparent', height: area.clientHeight || 600 }
-    ).then(function(el) {
-      if (!el) tryIframeFallback(handle);
-    }).catch(function() {
-      tryIframeFallback(handle);
-    });
-  } else {
-    tryIframeFallback(handle);
+// Primary: fetch tweets as RSS via bridge services
+async function fetchXRSS(handle) {
+  if (xCache[handle]) return xCache[handle];
+  for (const bridge of X_RSS_BRIDGES) {
+    try {
+      const url = bridge(handle);
+      const r = await fetch(PROXY + encodeURIComponent(url), {signal: AbortSignal.timeout(8000)});
+      const d = await r.json();
+      if (d.status === 'ok' && d.items && d.items.length > 0) {
+        xCache[handle] = d.items;
+        return d.items;
+      }
+    } catch(e) { /* try next bridge */ }
   }
+  return null; // All bridges failed
+}
+
+function renderXTweets(items, handle) {
+  DOM.xArea.innerHTML = items.map(item => {
+    const text = (item.title || item.description || '').replace(/<[^>]*>/g,'').substring(0,280);
+    const safe = (item.link||`https://x.com/${handle}`).replace(/'/g,"\\'");
+    return `<div class="x-tweet" onclick="window.open('${safe}','_blank')">
+      <div class="x-tweet-header"><div class="x-tweet-avatar"></div><div class="x-tweet-handle">@${handle}</div><div class="x-tweet-time">${timeAgo(item.pubDate)}</div></div>
+      <div class="x-tweet-text">${text}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadXFeed(handle) {
+  DOM.xArea.innerHTML = '<div class="x-loading">Loading @' + handle + '...</div>';
+  DOM.xTitle.textContent = `X / @${handle}`;
+
+  // Try RSS bridges first
+  const items = await fetchXRSS(handle);
+  if (items && items.length > 0) {
+    renderXTweets(items, handle);
+    return;
+  }
+
+  // Fallback: syndication iframe
+  tryIframeFallback(handle);
 }
 
 function tryIframeFallback(handle) {
-  const area = document.getElementById('x-embed-area');
-  const url = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${handle}?dnt=false&embedId=tw-${Date.now()}&frame=false&hideBorder=true&hideFooter=true&hideHeader=true&hideScrollBar=false&lang=en&theme=dark&transparent=false`;
-  area.innerHTML = '';
+  const url = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${handle}?dnt=true&embedId=tw-${Date.now()}&hideBorder=true&hideFooter=true&hideHeader=true&hideScrollBar=false&lang=en&theme=dark`;
+  DOM.xArea.innerHTML = '';
   const iframe = document.createElement('iframe');
   iframe.src = url;
   iframe.sandbox = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
-  iframe.style.cssText = 'width:100%;height:100%;border:none;';
-  area.appendChild(iframe);
-
-  // If iframe doesn't load content within 6s, show card fallback
-  const timer = setTimeout(() => showCardFallback(), 6000);
-  iframe.addEventListener('load', () => {
+  iframe.style.cssText = 'width:100%;height:100%;border:none';
+  DOM.xArea.appendChild(iframe);
+  // If iframe doesn't load within 8s, show card fallback
+  const timer = setTimeout(()=>showCardFallback(), 8000);
+  iframe.onload = () => {
     clearTimeout(timer);
-    // Check if iframe loaded an error page
     try {
       const doc = iframe.contentDocument;
-      if (doc && doc.body && (doc.body.innerText.includes('Rate limit') || doc.body.innerText.includes('Access Denied') || doc.body.innerText.length < 50)) {
-        showCardFallback();
-      }
-    } catch(e) { /* cross-origin, assume it loaded */ }
-  });
+      if(doc&&doc.body&&doc.body.innerText.length<50) showCardFallback();
+    } catch(e){/* cross-origin, assume loaded */}
+  };
 }
 
-function showCardFallback() {
-  const area = document.getElementById('x-embed-area');
-  area.innerHTML =
-    '<div class="x-fallback-msg">Live embed unavailable â click accounts below to open in a new window</div>' +
-    '<div class="x-fallback-cards">' +
-    xAccounts.map((a,i) =>
-      `<div class="x-card" onclick="window.open('https://x.com/${a.handle}','_blank')">` +
-        `<div class="x-card-dot"></div>` +
-        `<div><div class="x-card-handle">@${a.handle}</div><div class="x-card-label">${a.label}</div></div>` +
-      `</div>`
-    ).join('') +
-    '</div>';
+function showCardFallback(){
+  DOM.xArea.innerHTML =
+    '<div class="x-fallback-msg">Live embed unavailable — click accounts below to open in a new window</div>'+
+    '<div class="x-fallback-cards">'+
+    xAccounts.map(a=>
+      `<div class="x-card" onclick="window.open('https://x.com/${a.handle}','_blank')"><div class="x-card-dot"></div><div><div class="x-card-handle">@${a.handle}</div><div class="x-card-label">${a.label}</div></div></div>`
+    ).join('')+'</div>';
 }
 
 function loadXSearch(query) {
-  xSearchMode = true;
-  renderXTabs();
-  const area = document.getElementById('x-embed-area');
-  const note = document.getElementById('x-search-note');
-  note.textContent = `X search: "${query}"`;
-  note.classList.add('show');
-  document.getElementById('x-panel-title').textContent = `X / Search: ${query}`;
-
-  if (widgetsReady) {
-    area.innerHTML = '';
-    twttr.widgets.createTimeline(
-      { sourceType: 'url', url: `https://twitter.com/search?q=${encodeURIComponent(query)}` },
-      area,
-      { theme: 'dark', chrome: 'noheader nofooter noborders transparent', height: area.clientHeight || 600 }
-    ).then(function(el) {
-      if (!el) trySearchIframeFallback(query);
-    }).catch(function() {
-      trySearchIframeFallback(query);
-    });
-  } else {
-    trySearchIframeFallback(query);
-  }
-}
-
-function trySearchIframeFallback(query) {
-  const area = document.getElementById('x-embed-area');
-  const url = `https://syndication.twitter.com/srv/timeline-search?dnt=false&embedId=tw-${Date.now()}&frame=false&hideBorder=true&hideFooter=true&hideHeader=true&hideScrollBar=false&lang=en&query=${encodeURIComponent(query)}&theme=dark&transparent=false`;
-  area.innerHTML = `<iframe src="${url}" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" style="width:100%;height:100%;border:none;"></iframe>`;
-  // Fallback to opening X search directly
-  setTimeout(() => {
-    try {
-      const iframe = area.querySelector('iframe');
-      if (iframe && iframe.contentDocument && iframe.contentDocument.body.innerText.includes('Rate limit')) {
-        area.innerHTML = '<div class="x-fallback-msg">Search embed unavailable</div>' +
-          `<div class="x-fallback-cards"><div class="x-card" onclick="window.open('https://x.com/search?q=${encodeURIComponent(query)}&f=live','_blank')"><div class="x-card-dot"></div><div><div class="x-card-handle">Search: "${query}"</div><div class="x-card-label">Open X search in new window</div></div></div></div>`;
-      }
-    } catch(e) {}
-  }, 5000);
+  xSearchMode = true; renderXTabs();
+  DOM.xSearchNote.textContent = `X search: "${query}"`;
+  DOM.xSearchNote.classList.add('show');
+  DOM.xTitle.textContent = `X / Search: ${query}`;
+  // Open X search directly — search embeds are unreliable
+  DOM.xArea.innerHTML =
+    '<div class="x-fallback-msg">X search opened in new window</div>'+
+    `<div class="x-fallback-cards"><div class="x-card" onclick="window.open('https://x.com/search?q=${encodeURIComponent(query)}&f=live','_blank')"><div class="x-card-dot"></div><div><div class="x-card-handle">Search: "${query}"</div><div class="x-card-label">Click to open live X search</div></div></div></div>`;
+  window.open(`https://x.com/search?q=${encodeURIComponent(query)}&f=live`,'_blank');
 }
 
 renderXTabs();
-// Init: wait for widgets.js up to 5 seconds, then load timeline
-waitForWidgets(function(ready) {
-  loadXTimeline(xAccounts[0].handle);
-}, 5000);
+loadXFeed(xAccounts[0].handle);
 
-// ============================================
-// RSS FEEDS
-// ============================================
-const PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
+// ── RSS feeds — parallel loading ──
 const feedConfig = {
   world: [
-    { name:'BBC World',    url:'https://feeds.bbci.co.uk/news/world/rss.xml' },
-    { name:'Al Jazeera',   url:'https://www.aljazeera.com/xml/rss/all.xml' },
-    { name:'The Guardian',  url:'https://www.theguardian.com/world/rss' },
-    { name:'NPR World',    url:'https://feeds.npr.org/1004/rss.xml' },
-    { name:'AP News',      url:'https://rsshub.app/apnews/topics/world-news' },
-    { name:'Reuters',      url:'https://rsshub.app/reuters/world' },
+    {name:'BBC World',url:'https://feeds.bbci.co.uk/news/world/rss.xml'},
+    {name:'Al Jazeera',url:'https://www.aljazeera.com/xml/rss/all.xml'},
+    {name:'The Guardian',url:'https://www.theguardian.com/world/rss'},
+    {name:'NPR World',url:'https://feeds.npr.org/1004/rss.xml'},
+    {name:'AP News',url:'https://rsshub.app/apnews/topics/world-news'},
+    {name:'Reuters',url:'https://rsshub.app/reuters/world'},
   ],
   security: [
-    { name:'Bellingcat',      url:'https://www.bellingcat.com/feed/' },
-    { name:'War on the Rocks', url:'https://warontherocks.com/feed/' },
-    { name:'Defense One',     url:'https://www.defenseone.com/rss/' },
-    { name:'Lawfare',         url:'https://www.lawfaremedia.org/feed' },
-    { name:'BBC Politics',    url:'https://feeds.bbci.co.uk/news/politics/rss.xml' },
-    { name:'Foreign Policy',  url:'https://foreignpolicy.com/feed/' },
+    {name:'Bellingcat',url:'https://www.bellingcat.com/feed/'},
+    {name:'War on the Rocks',url:'https://warontherocks.com/feed/'},
+    {name:'Defense One',url:'https://www.defenseone.com/rss/'},
+    {name:'Lawfare',url:'https://www.lawfaremedia.org/feed'},
+    {name:'BBC Politics',url:'https://feeds.bbci.co.uk/news/politics/rss.xml'},
+    {name:'Foreign Policy',url:'https://foreignpolicy.com/feed/'},
   ],
 };
 
-let allItems = [];
-let feedsLoaded = 0;
+let allItems = [], feedsLoaded = 0;
 const totalFeeds = Object.values(feedConfig).flat().length;
-
-function timeAgo(d){const m=Math.floor((Date.now()-new Date(d).getTime())/60000);if(m<1)return'NOW';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d';}
 
 function feedItemHTML(item){
   const safe=(item.link||'').replace(/'/g,"\\'");
-  return`<div class="feed-item" data-text="${(item.title+' '+(item.description||'')+' '+item.sourceName).toLowerCase()}" onclick="window.open('${safe}','_blank')"><div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${item.title}</div><div class="feed-item-source">${item.sourceName}</div></div>`;
+  return`<div class="feed-item" onclick="window.open('${safe}','_blank')"><div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${item.title}</div><div class="feed-item-source">${item.sourceName}</div></div>`;
 }
 
 async function fetchFeed(src){
-  try{const r=await fetch(PROXY+encodeURIComponent(src.url));const d=await r.json();
-  if(d.status==='ok'){feedsLoaded++;document.getElementById('sys-feeds').textContent=`FEEDS: ${feedsLoaded}/${totalFeeds}`;return d.items.map(i=>({...i,sourceName:src.name}));}
-  }catch(e){console.warn('Feed error:',src.name,e);}return[];
+  try{
+    const r=await fetch(PROXY+encodeURIComponent(src.url),{signal:AbortSignal.timeout(10000)});
+    const d=await r.json();
+    if(d.status==='ok'){
+      feedsLoaded++;
+      DOM.sysFeeds.textContent=`FEEDS: ${feedsLoaded}/${totalFeeds}`;
+      return d.items.map(i=>({...i,sourceName:src.name}));
+    }
+  }catch(e){console.warn('Feed error:',src.name,e)}
+  return[];
 }
 
 async function loadAllFeeds(){
-  feedsLoaded=0;allItems=[];
+  feedsLoaded=0; allItems=[];
+  // Fire ALL feeds in parallel
+  const promises = {};
   for(const[key,sources]of Object.entries(feedConfig)){
-    const el=document.getElementById(`feed-${key}`);if(!el)continue;
-    let items=[];for(const src of sources)items.push(...await fetchFeed(src));
+    promises[key] = Promise.allSettled(sources.map(fetchFeed));
+  }
+  for(const[key,promise]of Object.entries(promises)){
+    const el = key==='world'?DOM.feedWorld:DOM.feedSec;
+    if(!el) continue;
+    const results = await promise;
+    let items = results.flatMap(r=>r.status==='fulfilled'?r.value:[]);
     items.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
     allItems.push(...items);
-    el.innerHTML=items.map(feedItemHTML).join('');
-    document.getElementById('sys-items').textContent=`ITEMS: ${allItems.length}`;
+    el.innerHTML = items.map(feedItemHTML).join('');
+    DOM.sysItems.textContent = `ITEMS: ${allItems.length}`;
   }
   buildTicker();
 }
 
-// Topic search: fetch Google News RSS for topic
-async function searchFeeds(query) {
-  const panels = { world: document.getElementById('feed-world'), security: document.getElementById('feed-security') };
-  Object.values(panels).forEach(p => { if(p) p.innerHTML = '<div class="feed-searching">Searching for "'+query+'"...</div>'; });
-
-  // Fetch Google News for the topic
-  const gnUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
-  let gnItems = [];
-  try {
-    const r = await fetch(PROXY + encodeURIComponent(gnUrl));
-    const d = await r.json();
-    if (d.status === 'ok') gnItems = d.items.map(i => ({ ...i, sourceName: 'Google News' }));
-  } catch(e) { console.warn('GNews error', e); }
-
-  // Also filter existing items
-  const filtered = allItems.filter(i => {
-    const text = (i.title + ' ' + (i.description||'') + ' ' + i.sourceName).toLowerCase();
-    return text.includes(query.toLowerCase());
-  });
-
-  // Combine, dedup by title, sort
-  const combined = [...gnItems, ...filtered];
-  const seen = new Set();
-  const deduped = combined.filter(i => {
-    const k = i.title.toLowerCase().substring(0, 50);
-    if (seen.has(k)) return false;
-    seen.add(k); return true;
-  });
-  deduped.sort((a,b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-  // Split across panels
-  const half = Math.ceil(deduped.length / 2);
-  const worldItems = deduped.slice(0, half);
-  const secItems = deduped.slice(half);
-
-  panels.world.innerHTML = worldItems.length ? worldItems.map(feedItemHTML).join('') : '<div class="feed-no-results">No results from RSS feeds</div>';
-  panels.security.innerHTML = secItems.length ? secItems.map(feedItemHTML).join('') : '';
-
-  document.getElementById('title-world').textContent = `Results: "${query}" (1)`;
-  document.getElementById('title-security').textContent = `Results: "${query}" (2)`;
-  document.getElementById('filter-count').textContent = `${deduped.length} results`;
+async function searchFeeds(query){
+  DOM.feedWorld.innerHTML = DOM.feedSec.innerHTML = `<div class="feed-searching">Searching for "${query}"...</div>`;
+  const gnUrl=`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
+  let gnItems=[];
+  try{
+    const r=await fetch(PROXY+encodeURIComponent(gnUrl),{signal:AbortSignal.timeout(10000)});
+    const d=await r.json();
+    if(d.status==='ok')gnItems=d.items.map(i=>({...i,sourceName:'Google News'}));
+  }catch(e){}
+  const q=query.toLowerCase();
+  const filtered=allItems.filter(i=>(i.title+' '+(i.description||'')+' '+i.sourceName).toLowerCase().includes(q));
+  const seen=new Set();
+  const deduped=[...gnItems,...filtered].filter(i=>{const k=i.title.toLowerCase().substring(0,50);if(seen.has(k))return false;seen.add(k);return true});
+  deduped.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
+  const half=Math.ceil(deduped.length/2);
+  DOM.feedWorld.innerHTML=deduped.length?deduped.slice(0,half).map(feedItemHTML).join(''):'<div class="feed-no-results">No results</div>';
+  DOM.feedSec.innerHTML=deduped.slice(half).map(feedItemHTML).join('');
+  DOM.titleWorld.textContent=`Results: "${query}" (1)`;
+  DOM.titleSec.textContent=`Results: "${query}" (2)`;
+  DOM.filterCount.textContent=`${deduped.length} results`;
 }
 
 function buildTicker(){
-  const t=document.getElementById('ticker');
-  const items=[...allItems].sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate)).slice(0,50);
-  t.innerHTML=items.map(i=>`<span><span class="ticker-src">${i.sourceName}</span> ${i.title}</span><span class="ticker-sep">&#x25C6;</span>`).join('');
+  // allItems already sorted per-panel; just take first 50 by date
+  const sorted=[...allItems].sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate)).slice(0,50);
+  DOM.ticker.innerHTML=sorted.map(i=>`<span><span class="ticker-src">${i.sourceName}</span> ${i.title}</span><span class="ticker-sep">&#x25C6;</span>`).join('');
 }
 
-// ============================================
-// SEARCH CONTROLLER
-// ============================================
-let activeSearch = '';
-
-function executeSearch() {
-  const input = document.getElementById('filter-input');
-  const query = input.value.trim();
-  if (!query) { clearFilter(); return; }
-  activeSearch = query;
-  document.getElementById('filter-tag-term').textContent = query;
-  document.getElementById('filter-tag').classList.add('show');
-
-  // Search RSS feeds
+// ── Search controller ──
+let activeSearch='';
+function executeSearch(){
+  const query=DOM.filterInput.value.trim();
+  if(!query){clearFilter();return}
+  activeSearch=query;
+  DOM.filterTagTerm.textContent=query;
+  DOM.filterTag.classList.add('show');
   searchFeeds(query);
-  // Search X
   loadXSearch(query);
-  // Pause auto-scroll during search
-  ['feed-world','feed-security'].forEach(id => { if(scrollState[id]) scrollState[id].paused = true; });
+  scrollPanels.forEach(el=>scrollPause.set(el,Infinity)); // Pause auto-scroll during search
 }
-
-function clearFilter() {
-  activeSearch = '';
-  document.getElementById('filter-input').value = '';
-  document.getElementById('filter-tag').classList.remove('show');
-  document.getElementById('filter-count').textContent = '';
-  document.getElementById('x-search-note').classList.remove('show');
-  document.getElementById('title-world').textContent = 'World News';
-  document.getElementById('title-security').textContent = 'Security & OSINT';
-  // Reload default feeds
+function clearFilter(){
+  activeSearch='';
+  DOM.filterInput.value='';
+  DOM.filterTag.classList.remove('show');
+  DOM.filterCount.textContent='';
+  DOM.xSearchNote.classList.remove('show');
+  DOM.titleWorld.textContent='World News';
+  DOM.titleSec.textContent='Security & OSINT';
   loadAllFeeds();
-  // Restore X to account view
   selectXAccount(currentXTab);
-  // Resume auto-scroll
-  ['feed-world','feed-security'].forEach(id => { if(scrollState[id]) scrollState[id].paused = false; });
+  scrollPanels.forEach(el=>scrollPause.set(el,0)); // Resume auto-scroll
 }
-
-// Enter key triggers search
-document.getElementById('filter-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { executeSearch(); e.target.blur(); }
-  if (e.key === 'Escape') { clearFilter(); e.target.blur(); }
+DOM.filterInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){executeSearch();e.target.blur()}
+  if(e.key==='Escape'){clearFilter();e.target.blur()}
 });
 
-// ============================================
-// KEYBOARD CONTROLS
-// ============================================
-document.addEventListener('keydown', (e) => {
-  if (document.activeElement === document.getElementById('filter-input')) return;
-  const num = parseInt(e.key);
-  if (num >= 1 && num <= 9 && num <= channels.length) { openChannel(num-1); return; }
-  if (e.key === '0' && channels.length >= 10) { openChannel(9); return; }
-  if (e.key==='r'||e.key==='R') { if(activeSearch) executeSearch(); else loadAllFeeds(); }
-  else if (e.key==='f'||e.key==='F') { if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen(); }
-  else if (e.key==='/') { e.preventDefault(); document.getElementById('filter-input').focus(); }
-  else if (e.key==='Escape') clearFilter();
+// ── Keyboard controls ──
+document.addEventListener('keydown',e=>{
+  if(document.activeElement===DOM.filterInput)return;
+  const n=parseInt(e.key);
+  if(n>=1&&n<=9&&n<=channels.length){openChannel(n-1);return}
+  if(e.key==='0'&&channels.length>=10){openChannel(9);return}
+  if(e.key==='r'||e.key==='R'){activeSearch?executeSearch():loadAllFeeds()}
+  else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  else if(e.key==='/'){e.preventDefault();DOM.filterInput.focus()}
+  else if(e.key==='Escape')clearFilter();
 });
 
-// ============================================
-// INIT
-// ============================================
+// ── Init ──
 loadAllFeeds();
-setInterval(() => { if(!activeSearch) loadAllFeeds(); }, 300000);
+setInterval(()=>{if(!activeSearch)loadAllFeeds()},300000); // Refresh every 5 min
 </script>
 </body>
 </html>
