@@ -24,6 +24,9 @@
   @keyframes flash-red{0%,100%{background:var(--red);box-shadow:0 0 12px var(--red)}50%{background:#ff6666;box-shadow:0 0 20px var(--red)}}
   .breaking-indicator{display:none;align-items:center;gap:6px;font-size:11px;color:white;background:var(--red);padding:2px 10px;font-weight:bold;letter-spacing:1px;animation:flash-red 1s infinite;font-family:'Courier New',monospace;cursor:pointer;position:relative}
   .breaking-indicator.show{display:flex}
+  .breaking-indicator.dismissed{background:rgba(255,215,0,.15);color:var(--yellow-dim);animation:none;border:1px solid var(--border)}
+  .breaking-indicator.dismissed:hover{background:rgba(255,215,0,.25);color:var(--yellow)}
+  .breaking-indicator.dismissed .breaking-popup{display:none}
   .breaking-popup{display:none;position:absolute;top:100%;left:0;min-width:360px;max-width:480px;background:rgba(10,10,20,.96);border:2px solid var(--red);padding:0;z-index:500;box-shadow:0 8px 32px rgba(255,0,0,.3);max-height:400px;overflow-y:auto}
   .breaking-indicator.show:hover .breaking-popup{display:block}
   .breaking-popup-item{padding:8px 12px;border-bottom:1px solid rgba(255,51,51,.2);cursor:pointer}
@@ -160,17 +163,8 @@
   .intel-panel.active{display:flex}
   #win-intel .win-titlebar{background:linear-gradient(90deg,#1a1a5a,#3a2a8a)}
   /* 3D Globe */
-  .globe-container{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:42px;height:42px;perspective:200px;z-index:5}
-  .globe{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--yellow);position:relative;animation:spin-globe 4s linear infinite;transform-style:preserve-3d;box-shadow:0 0 8px rgba(255,215,0,.2),inset 0 0 12px rgba(255,215,0,.08)}
-  .globe::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;border-top:1px solid rgba(255,215,0,.3);border-bottom:1px solid rgba(255,215,0,.3);transform:rotateX(60deg)}
-  .globe::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;border-top:1px solid rgba(255,215,0,.25);border-bottom:1px solid rgba(255,215,0,.25);transform:rotateX(30deg)}
-  .globe-ring{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;border-left:1px solid rgba(255,215,0,.3);border-right:1px solid rgba(255,215,0,.3)}
-  .globe-ring:nth-child(1){transform:rotateY(0deg)}
-  .globe-ring:nth-child(2){transform:rotateY(45deg)}
-  .globe-ring:nth-child(3){transform:rotateY(90deg)}
-  .globe-ring:nth-child(4){transform:rotateY(135deg)}
-  .globe-equator{position:absolute;top:50%;left:-2px;right:-2px;height:0;border-top:1.5px solid var(--yellow);opacity:.5}
-  @keyframes spin-globe{0%{transform:rotateY(0deg)}100%{transform:rotateY(360deg)}}
+  .globe-container{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:5}
+  .globe-canvas{border-radius:50%;box-shadow:0 0 10px rgba(0,255,100,.15)}
   .ticker-bar{position:relative}
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:transparent}
@@ -296,13 +290,7 @@
     <div class="ticker-label">MARKETS</div>
     <div class="ticker-content"><div class="ticker-scroll" id="ticker"></div></div>
     <div class="globe-container">
-      <div class="globe">
-        <div class="globe-ring"></div>
-        <div class="globe-ring"></div>
-        <div class="globe-ring"></div>
-        <div class="globe-ring"></div>
-        <div class="globe-equator"></div>
-      </div>
+      <canvas class="globe-canvas" id="globe-canvas" width="48" height="48"></canvas>
     </div>
   </div>
 </div>
@@ -373,8 +361,13 @@ function focusAlerts(){
   bringToFront(el);
 }
 function dismissBreaking(){
-  DOM.breakingIndicator.classList.remove('show');
-  breakingDismissedUntil = Date.now() + 10 * 60 * 1000; // suppress for 10 min
+  if(DOM.breakingIndicator.classList.contains('dismissed')){
+    // Re-click un-dismisses
+    DOM.breakingIndicator.classList.remove('dismissed');
+    return;
+  }
+  DOM.breakingIndicator.classList.add('dismissed');
+  breakingDismissedUntil = Date.now() + 10 * 60 * 1000;
 }
 let breakingDismissedUntil = 0;
 
@@ -605,7 +598,7 @@ function tokenize(text){
 function detectBreakingNews(){
   const now = Date.now();
   const recentWindow = 30 * 60 * 1000;
-  if(now < breakingDismissedUntil) return; // respect dismiss
+  if(now < breakingDismissedUntil && DOM.breakingIndicator.classList.contains('show')) return;
   const recent = allItems.filter(i => (now - new Date(i.pubDate).getTime()) < recentWindow);
   if(recent.length < 3){ DOM.breakingIndicator.classList.remove('show'); return; }
 
@@ -1078,17 +1071,40 @@ const STOCK_LABELS = {
 };
 let stockData = [];
 
-async function fetchStockPrices(){
-  const syms = STOCK_SYMBOLS.join(',');
+async function fetchStockBatch(symbols){
+  const syms = symbols.join(',');
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=symbol,regularMarketPrice,regularMarketChange,regularMarketChangePercent`;
+  // Race two proxies for speed
+  const proxies = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  ];
+  const controller = new AbortController();
   try {
-    const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(15000)});
-    const d = await r.json();
-    if(d.quoteResponse && d.quoteResponse.result){
-      stockData = d.quoteResponse.result;
-      renderStockTicker();
-    }
-  } catch(e){ console.warn('Stock fetch error:', e); }
+    const r = await Promise.any(proxies.map(p =>
+      fetch(p, {signal: controller.signal}).then(async res => {
+        const d = await res.json();
+        if(d.quoteResponse?.result?.length) return d.quoteResponse.result;
+        throw new Error('empty');
+      })
+    ));
+    controller.abort(); // cancel slower request
+    return r;
+  } catch(e){ return []; }
+}
+
+async function fetchStockPrices(){
+  // Split into 2 parallel batches for speed
+  const mid = Math.ceil(STOCK_SYMBOLS.length / 2);
+  const [batch1, batch2] = await Promise.all([
+    fetchStockBatch(STOCK_SYMBOLS.slice(0, mid)),
+    fetchStockBatch(STOCK_SYMBOLS.slice(mid)),
+  ]);
+  const results = [...batch1, ...batch2];
+  if(results.length){
+    stockData = results;
+    renderStockTicker();
+  }
 }
 
 function renderStockTicker(){
@@ -1185,6 +1201,124 @@ setTimeout(() => {
 // Stock prices refresh every 2 minutes
 fetchStockPrices();
 setInterval(fetchStockPrices, 120000);
+
+// ── 90s CGI Globe ──
+(function(){
+  const cv = $('globe-canvas');
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = 48, R = 22, CX = 24, CY = 24;
+  // Simplified continent outlines as [lon, lat] polylines (degrees)
+  const continents = [
+    // North America
+    [[-130,50],[-120,60],[-100,60],[-80,55],[-60,48],[-75,30],[-80,25],[-100,20],[-105,25],[-120,35],[-130,50]],
+    // South America
+    [[-80,10],[-60,5],[-35,-5],[-40,-20],[-50,-30],[-70,-50],[-75,-40],[-80,-5],[-80,10]],
+    // Europe
+    [[-10,35],[0,40],[5,48],[15,55],[30,60],[40,55],[30,45],[25,38],[10,35],[-10,35]],
+    // Africa
+    [[-15,15],[-5,5],[10,-5],[15,-15],[30,-30],[35,-20],[40,0],[50,12],[40,15],[30,30],[10,35],[-5,35],[-15,15]],
+    // Asia
+    [[40,55],[60,55],[80,50],[100,55],[120,55],[140,45],[130,35],[120,25],[105,15],[95,10],[80,15],[70,25],[60,30],[40,35],[30,45],[40,55]],
+    // Australia
+    [[115,-15],[130,-15],[150,-20],[150,-35],[135,-35],[115,-25],[115,-15]],
+  ];
+
+  let angle = 0;
+  function project(lon, lat, rot){
+    const lr = (lon + rot) * Math.PI / 180;
+    const la = lat * Math.PI / 180;
+    const x = Math.cos(la) * Math.sin(lr);
+    const y = -Math.sin(la);
+    const z = Math.cos(la) * Math.cos(lr);
+    if(z < -0.05) return null; // behind globe
+    return [CX + x * R, CY + y * R, z];
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, W);
+    // Globe background
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.fillStyle = '#050e1a';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,215,0,0.15)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Grid lines — latitude
+    ctx.strokeStyle = 'rgba(255,215,0,0.2)';
+    ctx.lineWidth = 0.4;
+    for(let lat = -60; lat <= 60; lat += 30){
+      ctx.beginPath();
+      let started = false;
+      for(let lon = -180; lon <= 180; lon += 5){
+        const p = project(lon, lat, angle);
+        if(!p){ started = false; continue; }
+        started ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+        started = true;
+      }
+      ctx.stroke();
+    }
+    // Grid lines — longitude
+    for(let lon = -180; lon < 180; lon += 30){
+      ctx.beginPath();
+      let started = false;
+      for(let lat = -90; lat <= 90; lat += 5){
+        const p = project(lon, lat, angle);
+        if(!p){ started = false; continue; }
+        started ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+        started = true;
+      }
+      ctx.stroke();
+    }
+
+    // Continents
+    ctx.strokeStyle = 'rgba(0,220,80,0.8)';
+    ctx.fillStyle = 'rgba(0,180,60,0.25)';
+    ctx.lineWidth = 0.8;
+    continents.forEach(pts => {
+      ctx.beginPath();
+      let started = false, allVisible = true;
+      const projected = pts.map(([lo,la]) => project(lo, la, angle));
+      projected.forEach(p => {
+        if(!p){ allVisible = false; started = false; return; }
+        started ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+        started = true;
+      });
+      if(allVisible && projected.length > 2){
+        ctx.fill();
+      }
+      ctx.stroke();
+    });
+
+    // Equator highlight
+    ctx.strokeStyle = 'rgba(255,215,0,0.35)';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    let started = false;
+    for(let lon = -180; lon <= 180; lon += 3){
+      const p = project(lon, 0, angle);
+      if(!p){ started = false; continue; }
+      started ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+      started = true;
+    }
+    ctx.stroke();
+
+    // Glow rim
+    const grad = ctx.createRadialGradient(CX, CY, R - 3, CX, CY, R + 1);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(1, 'rgba(0,255,100,0.08)');
+    ctx.beginPath();
+    ctx.arc(CX, CY, R + 1, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    angle += 0.4;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
 </script>
 </body>
 </html>
