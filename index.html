@@ -1016,13 +1016,29 @@ const SOURCE_COLOR = {
 };
 
 // Feature #7: Region classification for heat bar
-const SOURCE_REGION = {
-  'NYT':'US','NYT World':'US','WSJ':'US','WSJ World':'US','NPR World':'US','AP News':'US',
-  'BBC World':'EU','France 24':'EU','DW News':'EU','euronews':'EU','Le Devoir':'EU','Le Monde':'EU','Globe & Mail':'EU',
-  'JPost':'ME','Haaretz':'ME','YNet':'ME','Times of Israel':'ME','Al Jazeera':'ME','i24NEWS':'ME',
-  'SCMP':'APAC','The Diplomat':'APAC','CNA':'APAC','NHK':'APAC','WION':'APAC',
-  'Reuters':'US','Economist':'EU','Financial Times':'EU','The Intercept':'US',
+// Region detection by CONTENT (headline keywords), not source origin
+const REGION_KEYWORDS = {
+  ME: ['iran','iranian','tehran','iraq','iraqi','baghdad','syria','syrian','damascus','israel','israeli','gaza','palestinian','west bank','hamas','hezbollah','houthi','yemen','saudi','riyadh','lebanon','beirut','jordan','egypt','cairo','turkey','turkish','ankara','istanbul','qatar','doha','uae','dubai','abu dhabi','oman','bahrain','kuwait','idf','irgc','netanyahu','khamenei','mossad','shin bet','kibbutz','tel aviv','jerusalem','golan','sinai','strait of hormuz','persian gulf','red sea','negev'],
+  EU: ['europe','european','eu ','brussels','nato','france','french','paris','macron','germany','german','berlin','uk ','britain','british','london','ukraine','ukrainian','kyiv','zelenskyy','zelensky','russia','russian','moscow','putin','kremlin','poland','warsaw','spain','madrid','italy','rome','sweden','norway','finland','denmark','netherlands','amsterdam','belgium','greece','athens','romania','hungary','balkans','serbia','switzerland','geneva','portugal','austria','vienna','czech','scotland','ireland','dublin'],
+  APAC: ['china','chinese','beijing','xi jinping','taiwan','taipei','japan','japanese','tokyo','korea','korean','seoul','pyongyang','india','indian','delhi','modi','pakistan','islamabad','australia','sydney','canberra','indonesia','jakarta','philippines','manila','vietnam','hanoi','thailand','bangkok','myanmar','singapore','malaysia','hong kong','pacific','south china sea','asean','kashmir','tibet','xinjiang','uyghur'],
+  US: ['united states','washington dc','white house','congress','senate','pentagon','cia ','fbi ','biden','republican','democrat','california','new york','texas','florida','chicago','los angeles','wall street','federal reserve','supreme court','doj ','homeland','americas','mexico','canada','ottawa','trudeau','latin america','brazil','colombia','venezuela','cuba','argentina','caribbean'],
+  AFRICA: ['africa','african','nigeria','lagos','abuja','kenya','nairobi','south africa','johannesburg','ethiopia','addis','sudan','khartoum','congo','somalia','mogadishu','sahel','libya','tripoli','morocco','tunisia','algeria','mali','niger','chad','mozambique','zimbabwe','ghana','senegal','uganda','rwanda','sahara'],
 };
+
+function classifyRegion(title){
+  const t = (' ' + (title||'').toLowerCase() + ' ');
+  let best = 'OTHER', bestScore = 0;
+  for(const [region, keywords] of Object.entries(REGION_KEYWORDS)){
+    let score = 0;
+    for(const kw of keywords){
+      if(t.includes(kw)) score++;
+    }
+    if(score > bestScore){ bestScore = score; best = region; }
+  }
+  // Map AFRICA into OTHER for the 5-segment bar
+  if(best === 'AFRICA') best = 'OTHER';
+  return bestScore > 0 ? best : 'OTHER';
+}
 
 const feedConfig = {
   world: [
@@ -1216,7 +1232,7 @@ function updateRegionHeatBar(){
   const recentCutoff = Date.now() - 60*60*1000; // last hour
   allItems.forEach(item => {
     if(new Date(item.pubDate).getTime() < recentCutoff) return;
-    const region = SOURCE_REGION[item.sourceName] || 'OTHER';
+    const region = classifyRegion(item.title);
     const key = ['US','EU','ME','APAC'].includes(region) ? region : 'OTHER';
     counts[key]++;
   });
@@ -1224,8 +1240,9 @@ function updateRegionHeatBar(){
   ['us','eu','me','apac','other'].forEach(r => {
     const el = $(`rh-${r}`);
     const c = counts[r.toUpperCase()];
+    const pct = Math.round(c/total*100);
     el.style.flex = Math.max(c/total, 0.05);
-    el.textContent = `${r.toUpperCase()} ${c}`;
+    el.textContent = `${r.toUpperCase()} ${pct}%`;
   });
 }
 
@@ -1257,10 +1274,10 @@ function updateSituationSummary(){
   // Count sources active in last hour
   const activeSources = new Set(lastHour.map(i => i.sourceName));
 
-  // Top region
+  // Top region — by headline content, not source origin
   const regionCounts = {};
   lastHour.forEach(i => {
-    const r = SOURCE_REGION[i.sourceName] || 'Other';
+    const r = classifyRegion(i.title);
     regionCounts[r] = (regionCounts[r]||0) + 1;
   });
   const topRegion = Object.entries(regionCounts).sort((a,b)=>b[1]-a[1])[0];
