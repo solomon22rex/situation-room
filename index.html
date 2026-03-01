@@ -1018,27 +1018,80 @@ const PROXIES = [
 ];
 
 // Feature #14: Source color coding
-const SOURCE_PRIORITY = {
-  'NYT':1,'NYT World':1,
-  'WSJ':2,'WSJ World':2,
-  'Economist':3,
-  'Financial Times':4,
-  'JPost':5,
-  'Haaretz':6,
-  'Al Jazeera':7,
-};
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  FEEDS CONFIG — single source of truth for all RSS sources     ║
+// ║  To add/remove a source, just edit this one array.             ║
+// ║                                                                ║
+// ║  Fields:                                                       ║
+// ║    name     — display name (must be unique)                    ║
+// ║    url      — RSS feed URL                                     ║
+// ║    panel    — 'world' or 'security'                            ║
+// ║    priority — sort weight (1=highest, 99=default). Headlines   ║
+// ║               within a 30-min window sort by this.             ║
+// ║    color    — left-border color class:                         ║
+// ║               'tier1' (gold), 'wire' (blue),                   ║
+// ║               'security' (purple), 'israeli' (green)           ║
+// ║               omit for no highlight                            ║
+// ╚══════════════════════════════════════════════════════════════════╝
+const FEEDS = [
+  // ── World: Tier 1 (priority sources) ──
+  {name:'NYT',              url:'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',       panel:'world', priority:1, color:'tier1'},
+  {name:'NYT World',        url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',          panel:'world', priority:1, color:'tier1'},
+  {name:'WSJ',              url:'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain',     panel:'world', priority:2, color:'tier1'},
+  {name:'WSJ World',        url:'https://feeds.content.dowjones.io/public/rss/RSSWorldNews',       panel:'world', priority:2, color:'tier1'},
+  {name:'Economist',        url:'https://www.economist.com/rss',                                   panel:'world', priority:3, color:'tier1'},
+  {name:'Financial Times',  url:'https://www.ft.com/?format=rss',                                  panel:'world', priority:4, color:'tier1'},
+  // ── World: Israeli sources ──
+  {name:'JPost',            url:'https://www.jpost.com/rss',                                       panel:'world', priority:5, color:'israeli'},
+  {name:'Haaretz',          url:'https://www.haaretz.com/srv/haaretz-late',                        panel:'world', priority:6, color:'israeli'},
+  {name:'YNet',             url:'http://www.ynet.co.il/Integration/StoryRss3254.xml',              panel:'world', priority:99, color:'israeli'},
+  {name:'Times of Israel',  url:'https://www.timesofisrael.com/feed/',                             panel:'world', priority:99, color:'israeli'},
+  // ── World: Major wires & intl ──
+  {name:'Al Jazeera',       url:'https://www.aljazeera.com/xml/rss/all.xml',                       panel:'world', priority:7, color:'wire'},
+  {name:'Reuters',          url:'https://feeds.reuters.com/reuters/worldNews',                     panel:'world', priority:99, color:'wire'},
+  {name:'AP News',          url:'https://rsshub.app/apnews/topics/world-news',                     panel:'world', priority:99, color:'wire'},
+  {name:'BBC World',        url:'https://feeds.bbci.co.uk/news/world/rss.xml',                     panel:'world', priority:99, color:'wire'},
+  {name:'NPR World',        url:'https://feeds.npr.org/1004/rss.xml',                              panel:'world', priority:99, color:'wire'},
+  {name:'France 24',        url:'https://www.france24.com/en/rss',                                 panel:'world', priority:99, color:'wire'},
+  {name:'DW News',          url:'https://rss.dw.com/rdf/rss-en-all',                               panel:'world', priority:99, color:'wire'},
+  // ── World: Regional & niche ──
+  {name:'SCMP',             url:'https://www.scmp.com/rss/91/feed',                                panel:'world', priority:99},
+  {name:'The Diplomat',     url:'https://thediplomat.com/feed/',                                   panel:'world', priority:99},
+  {name:'The Intercept',    url:'https://theintercept.com/feed/?rss',                              panel:'world', priority:99},
+  {name:'Globe & Mail',     url:'https://www.theglobeandmail.com/?service=rss',                    panel:'world', priority:99},
+  {name:'Le Devoir',        url:'https://www.ledevoir.com/rss/manchettes.xml',                     panel:'world', priority:99},
+  {name:'Le Monde',         url:'https://www.lemonde.fr/rss/une.xml',                              panel:'world', priority:99},
+  // ── Security / OSINT ──
+  {name:'Bellingcat',       url:'https://www.bellingcat.com/feed/',                                panel:'security', priority:99, color:'security'},
+  {name:'War on the Rocks', url:'https://warontherocks.com/feed/',                                 panel:'security', priority:99, color:'security'},
+  {name:'Lawfare',          url:'https://www.lawfaremedia.org/feed',                               panel:'security', priority:99, color:'security'},
+  {name:'The War Zone',     url:'https://www.thedrive.com/the-war-zone/feed',                      panel:'security', priority:99, color:'security'},
+  {name:'CSIS',             url:'https://www.csis.org/analysis/feed',                              panel:'security', priority:99, color:'security'},
+  {name:'ICG',              url:'https://www.crisisgroup.org/feed/rss',                            panel:'security', priority:99, color:'security'},
+  {name:'RUSI',             url:'https://www.rusi.org/rss.xml',                                    panel:'security', priority:99, color:'security'},
+  {name:'Foreign Policy',   url:'https://foreignpolicy.com/feed/',                                 panel:'security', priority:99, color:'security'},
+  {name:'Defense One',      url:'https://www.defenseone.com/rss/',                                 panel:'security', priority:99, color:'security'},
+  {name:'Krebs on Security',url:'https://krebsonsecurity.com/feed/',                               panel:'security', priority:99, color:'security'},
+  {name:'The Record',       url:'https://therecord.media/feed/',                                   panel:'security', priority:99, color:'security'},
+  {name:'Just Security',    url:'https://www.justsecurity.org/feed/',                              panel:'security', priority:99, color:'security'},
+];
 
-const SOURCE_COLOR = {
-  'NYT':'tier1','NYT World':'tier1','WSJ':'tier1','WSJ World':'tier1','Economist':'tier1','Financial Times':'tier1',
-  'Reuters':'wire','AP News':'wire','BBC World':'wire','NPR World':'wire','France 24':'wire','DW News':'wire',
-  'JPost':'israeli','Haaretz':'israeli','YNet':'israeli','Times of Israel':'israeli',
-  'Bellingcat':'security','War on the Rocks':'security','Lawfare':'security','The War Zone':'security',
-  'CSIS':'security','ICG':'security','RUSI':'security','Foreign Policy':'security','Defense One':'security',
-  'Krebs on Security':'security','The Record':'security','Just Security':'security',
-};
+// ── Derived lookup tables (auto-generated from FEEDS array) ──
+const SOURCE_PRIORITY = {};
+const SOURCE_COLOR = {};
+FEEDS.forEach(f => {
+  if(f.priority && f.priority < 99) SOURCE_PRIORITY[f.name] = f.priority;
+  if(f.color) SOURCE_COLOR[f.name] = f.color;
+});
 
-// Feature #7: Region classification for heat bar
-// Region detection by CONTENT (headline keywords), not source origin
+// Build feedConfig grouped by panel (used by fetch/render system)
+const feedConfig = {};
+FEEDS.forEach(f => {
+  if(!feedConfig[f.panel]) feedConfig[f.panel] = [];
+  feedConfig[f.panel].push({name:f.name, url:f.url});
+});
+
+// ── Region detection by CONTENT (headline keywords), not source origin ──
 const REGION_KEYWORDS = {
   ME: ['iran','iranian','tehran','iraq','iraqi','baghdad','syria','syrian','damascus','israel','israeli','gaza','palestinian','west bank','hamas','hezbollah','houthi','yemen','saudi','riyadh','lebanon','beirut','jordan','egypt','cairo','turkey','turkish','ankara','istanbul','qatar','doha','uae','dubai','abu dhabi','oman','bahrain','kuwait','idf','irgc','netanyahu','khamenei','mossad','shin bet','kibbutz','tel aviv','jerusalem','golan','sinai','strait of hormuz','persian gulf','red sea','negev'],
   EU: ['europe','european','eu ','brussels','nato','france','french','paris','macron','germany','german','berlin','uk ','britain','british','london','ukraine','ukrainian','kyiv','zelenskyy','zelensky','russia','russian','moscow','putin','kremlin','poland','warsaw','spain','madrid','italy','rome','sweden','norway','finland','denmark','netherlands','amsterdam','belgium','greece','athens','romania','hungary','balkans','serbia','switzerland','geneva','portugal','austria','vienna','czech','scotland','ireland','dublin'],
@@ -1052,56 +1105,12 @@ function classifyRegion(title){
   let best = 'OTHER', bestScore = 0;
   for(const [region, keywords] of Object.entries(REGION_KEYWORDS)){
     let score = 0;
-    for(const kw of keywords){
-      if(t.includes(kw)) score++;
-    }
+    for(const kw of keywords){ if(t.includes(kw)) score++; }
     if(score > bestScore){ bestScore = score; best = region; }
   }
-  // Map AFRICA into OTHER for the 5-segment bar
   if(best === 'AFRICA') best = 'OTHER';
   return bestScore > 0 ? best : 'OTHER';
 }
-
-const feedConfig = {
-  world: [
-    {name:'NYT',url:'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'},
-    {name:'NYT World',url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml'},
-    {name:'WSJ',url:'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain'},
-    {name:'WSJ World',url:'https://feeds.content.dowjones.io/public/rss/RSSWorldNews'},
-    {name:'Financial Times',url:'https://www.ft.com/?format=rss'},
-    {name:'JPost',url:'https://www.jpost.com/rss'},
-    {name:'Haaretz',url:'https://www.haaretz.com/srv/haaretz-late'},
-    {name:'Al Jazeera',url:'https://www.aljazeera.com/xml/rss/all.xml'},
-    {name:'Reuters',url:'https://feeds.reuters.com/reuters/worldNews'},
-    {name:'AP News',url:'https://rsshub.app/apnews/topics/world-news'},
-    {name:'BBC World',url:'https://feeds.bbci.co.uk/news/world/rss.xml'},
-    {name:'NPR World',url:'https://feeds.npr.org/1004/rss.xml'},
-    {name:'France 24',url:'https://www.france24.com/en/rss'},
-    {name:'DW News',url:'https://rss.dw.com/rdf/rss-en-all'},
-    {name:'SCMP',url:'https://www.scmp.com/rss/91/feed'},
-    {name:'The Diplomat',url:'https://thediplomat.com/feed/'},
-    {name:'YNet',url:'http://www.ynet.co.il/Integration/StoryRss3254.xml'},
-    {name:'Times of Israel',url:'https://www.timesofisrael.com/feed/'},
-    {name:'The Intercept',url:'https://theintercept.com/feed/?rss'},
-    {name:'Globe & Mail',url:'https://www.theglobeandmail.com/?service=rss'},
-    {name:'Le Devoir',url:'https://www.ledevoir.com/rss/manchettes.xml'},
-    {name:'Le Monde',url:'https://www.lemonde.fr/rss/une.xml'},
-  ],
-  security: [
-    {name:'Bellingcat',url:'https://www.bellingcat.com/feed/'},
-    {name:'War on the Rocks',url:'https://warontherocks.com/feed/'},
-    {name:'Lawfare',url:'https://www.lawfaremedia.org/feed'},
-    {name:'The War Zone',url:'https://www.thedrive.com/the-war-zone/feed'},
-    {name:'CSIS',url:'https://www.csis.org/analysis/feed'},
-    {name:'ICG',url:'https://www.crisisgroup.org/feed/rss'},
-    {name:'RUSI',url:'https://www.rusi.org/rss.xml'},
-    {name:'Foreign Policy',url:'https://foreignpolicy.com/feed/'},
-    {name:'Defense One',url:'https://www.defenseone.com/rss/'},
-    {name:'Krebs on Security',url:'https://krebsonsecurity.com/feed/'},
-    {name:'The Record',url:'https://therecord.media/feed/'},
-    {name:'Just Security',url:'https://www.justsecurity.org/feed/'},
-  ],
-};
 
 const MAX_ITEMS = 600;
 const RSS_CACHE_TTL = 180000;
