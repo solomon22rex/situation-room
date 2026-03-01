@@ -12,6 +12,8 @@
     --blue-bright:#4db8ff;--blue-dark:#0a2a5a;--blue-panel:rgba(10,30,70,.92);
     --red:#ff3333;--green:#66ff66;--orange:#ff9900;
     --border:rgba(255,215,0,.25);--border-bright:rgba(255,215,0,.5);
+    /* Source color coding */
+    --src-tier1:#ffd700;--src-wire:#4db8ff;--src-security:#b388ff;--src-israeli:#66ff66;
   }
   body{background:var(--bg);color:var(--yellow);font-family:'Times New Roman',Times,Georgia,serif;overflow:hidden;height:100vh;width:100vw;user-select:none}
   .dashboard{display:grid;grid-template-rows:auto 1fr 56px;height:100vh;gap:0;background:var(--bg-deep)}
@@ -40,20 +42,43 @@
   .sys-stats{font-size:10px;color:var(--yellow-dim);display:flex;gap:10px;font-family:'Courier New',monospace;align-items:center}
   .reset-btn{background:rgba(255,215,0,.08);border:1px solid var(--border);color:var(--yellow-dim);font-size:9px;padding:2px 8px;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:1px}
   .reset-btn:hover{background:rgba(255,215,0,.2);color:var(--yellow);border-color:var(--yellow)}
-  .filter-bar{background:var(--blue-dark);border-bottom:1px solid var(--border);padding:4px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+  /* Filter bar + time window + trending */
+  .filter-bar{background:var(--blue-dark);border-bottom:1px solid var(--border);padding:4px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
   .filter-bar label{font-size:12px;color:var(--yellow-dim);letter-spacing:1px;font-weight:bold}
-  .filter-input{background:rgba(0,0,0,.4);border:1px solid var(--border);color:var(--yellow);font-family:'Times New Roman',serif;font-size:13px;padding:3px 10px;width:280px;outline:none}
+  .filter-input{background:rgba(0,0,0,.4);border:1px solid var(--border);color:var(--yellow);font-family:'Times New Roman',serif;font-size:13px;padding:3px 10px;width:220px;outline:none}
   .filter-input:focus{border-color:var(--yellow);box-shadow:0 0 6px rgba(255,215,0,.3)}
   .filter-input::placeholder{color:var(--yellow-dim);opacity:.5}
   .filter-count{font-size:10px;color:var(--blue-bright);font-family:'Courier New',monospace}
   .filter-btn{background:rgba(255,215,0,.1);border:1px solid var(--border);color:var(--yellow);font-size:10px;padding:3px 10px;cursor:pointer;font-family:'Times New Roman',serif;font-weight:bold}
   .filter-btn:hover{background:rgba(255,215,0,.2);border-color:var(--yellow)}
+  .filter-btn.active{background:rgba(255,215,0,.25);border-color:var(--yellow);color:white}
   .filter-active-tag{font-size:10px;background:rgba(255,51,51,.2);border:1px solid var(--red);color:var(--yellow);padding:2px 8px;display:none;align-items:center;gap:4px}
   .filter-active-tag.show{display:flex}
+  /* Time window filter buttons */
+  .time-filter-group{display:flex;gap:2px;margin-left:8px;align-items:center}
+  .time-filter-label{font-size:9px;color:var(--yellow-dim);letter-spacing:1px;font-family:'Courier New',monospace;margin-right:4px}
+  .time-filter-btn{background:rgba(255,215,0,.05);border:1px solid var(--border);color:var(--yellow-dim);font-size:9px;padding:2px 8px;cursor:pointer;font-family:'Courier New',monospace}
+  .time-filter-btn:hover{background:rgba(255,215,0,.15);color:var(--yellow)}
+  .time-filter-btn.active{background:rgba(255,215,0,.2);color:var(--yellow);border-color:var(--yellow)}
+  /* Region heat bar */
+  .region-heat-bar{display:flex;gap:0;padding:2px 16px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);flex-shrink:0;align-items:center}
+  .region-heat-label{font-size:8px;color:var(--yellow-dim);font-family:'Courier New',monospace;letter-spacing:1px;margin-right:8px;flex-shrink:0}
+  .region-heat-segment{height:14px;display:flex;align-items:center;justify-content:center;font-size:7px;font-family:'Courier New',monospace;color:white;letter-spacing:.5px;transition:flex .5s;min-width:24px}
+  .region-heat-segment.us{background:rgba(77,184,255,.5)}
+  .region-heat-segment.eu{background:rgba(255,215,0,.4)}
+  .region-heat-segment.me{background:rgba(255,51,51,.5)}
+  .region-heat-segment.apac{background:rgba(102,255,102,.35)}
+  .region-heat-segment.other{background:rgba(179,136,255,.3)}
+  /* Trending keywords strip */
+  .trending-strip{display:flex;gap:6px;padding:3px 16px;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;align-items:center}
+  .trending-label{font-size:8px;color:var(--orange);font-family:'Courier New',monospace;letter-spacing:1px;flex-shrink:0;text-transform:uppercase}
+  .trending-kw{font-size:9px;background:rgba(255,153,0,.12);border:1px solid rgba(255,153,0,.3);color:var(--orange);padding:1px 6px;font-family:'Courier New',monospace;white-space:nowrap;cursor:pointer}
+  .trending-kw:hover{background:rgba(255,153,0,.25);color:white}
+  /* Main content */
   .main-content{position:relative;overflow:hidden;min-height:0;background:var(--bg-deep)}
   .win{background:var(--blue-panel);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:absolute;transition:box-shadow .2s;min-width:160px;min-height:80px;contain:layout style}
   .win.active-win{z-index:50;box-shadow:0 0 20px rgba(255,215,0,.15)}
-  .win.minimized .win-body,.win.minimized .channels-body,.win.minimized .open-windows-bar,.win.minimized .bsky-feed,.win.minimized .bsky-tabs,.win.minimized .bsky-search-note,.win.minimized .alerts-body,.win.minimized .watchlist-bar{display:none}
+  .win.minimized .win-body,.win.minimized .channels-body,.win.minimized .open-windows-bar,.win.minimized .bsky-feed,.win.minimized .bsky-tabs,.win.minimized .bsky-search-note,.win.minimized .alerts-body,.win.minimized .watchlist-bar,.win.minimized .feed-health,.win.minimized .intel-tabs,.win.minimized .intel-panel,.win.minimized .situation-summary{display:none}
   .win.minimized{height:28px!important;min-height:28px!important;overflow:hidden}
   .win.maximized{left:0!important;top:0!important;width:100%!important;height:100%!important;z-index:100!important}
   .win-titlebar{background:linear-gradient(90deg,#1a3a7a,#2a5aaa);padding:4px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border);cursor:grab}
@@ -64,13 +89,28 @@
   .win-btn{width:18px;height:16px;background:var(--blue-dark);border:1px solid var(--border);color:var(--yellow);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Arial;padding:0;line-height:1}
   .win-btn:hover{background:rgba(255,215,0,.15);border-color:var(--yellow)}
   .win-body{flex:1;overflow-y:auto;position:relative;min-height:0;scroll-behavior:auto;contain:layout style}
-  .feed-item{padding:6px 10px;border-bottom:1px solid rgba(255,215,0,.08);cursor:pointer;transition:background .15s;position:relative}
+  /* Feed items with source color coding + freshness */
+  .feed-item{padding:6px 10px;border-bottom:1px solid rgba(255,215,0,.08);cursor:pointer;transition:background .15s,opacity .3s;position:relative;border-left:3px solid transparent}
   .feed-item:hover{background:rgba(255,215,0,.07)}
-  .feed-item:hover .feed-preview{display:block}
+  .feed-item.src-tier1{border-left-color:var(--src-tier1)}
+  .feed-item.src-wire{border-left-color:var(--src-wire)}
+  .feed-item.src-security{border-left-color:var(--src-security)}
+  .feed-item.src-israeli{border-left-color:var(--src-israeli)}
+  .feed-item.fresh{border-left-width:4px}
+  .feed-item.stale{opacity:.55}
   .feed-item-time{font-size:9px;color:var(--blue-bright);font-family:'Courier New',monospace}
   .feed-item-title{font-size:13px;line-height:1.4;color:var(--yellow);margin-top:1px}
   .feed-item-source{font-size:9px;color:var(--yellow-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+  .feed-item-desc{display:none;font-size:11px;line-height:1.5;color:var(--yellow-dim);margin-top:4px;padding:4px 0;border-top:1px solid var(--border)}
+  .feed-item.expanded .feed-item-desc{display:block}
   .feed-preview{display:none;position:absolute;left:10px;right:10px;bottom:100%;background:rgba(6,14,32,.96);border:1px solid var(--border-bright);padding:8px 10px;font-size:11px;line-height:1.5;color:var(--yellow-dim);z-index:200;max-height:120px;overflow:hidden;pointer-events:none;box-shadow:0 -4px 16px rgba(0,0,0,.5)}
+  /* Pinned breaking story */
+  .pinned-breaking{padding:8px 12px;background:rgba(255,51,51,.1);border:2px solid var(--red);border-left:5px solid var(--red);margin:4px 6px;cursor:pointer;display:none}
+  .pinned-breaking.show{display:block}
+  .pinned-breaking-label{font-size:8px;color:var(--red);font-weight:bold;letter-spacing:2px;font-family:'Courier New',monospace;text-transform:uppercase}
+  .pinned-breaking-title{font-size:15px;font-weight:bold;color:white;margin-top:3px;line-height:1.4}
+  .pinned-breaking-meta{font-size:9px;color:var(--yellow-dim);margin-top:3px}
+  /* Security panel */
   #win-security .win-titlebar{background:linear-gradient(90deg,#2a1a5a,#4a2a8a)}
   #win-security .feed-item-source{color:#b388ff}
   .feed-searching{padding:12px;text-align:center;color:var(--yellow-dim);font-style:italic;font-size:12px}
@@ -81,7 +121,12 @@
   .feed-dot.fail{background:var(--red);box-shadow:0 0 3px var(--red)}
   .feed-dot.loading{background:var(--orange);animation:pulse 1s infinite}
   .feed-dot.cached{background:var(--blue-bright);box-shadow:0 0 3px var(--blue-bright)}
+  /* Channels — collapsible */
   .channels-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow-y:auto;padding:6px;gap:4px}
+  .channels-compact{display:flex;flex-wrap:wrap;gap:3px;padding:4px 6px}
+  .ch-compact-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);border:1px solid var(--border);color:var(--blue-bright);font-size:12px;font-weight:bold;font-family:'Courier New',monospace;cursor:pointer;position:relative}
+  .ch-compact-btn:hover{background:rgba(255,215,0,.12);border-color:var(--yellow);color:var(--yellow)}
+  .ch-compact-btn .ch-compact-dot{position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:var(--red);animation:pulse 1s infinite}
   .channels-hint{font-size:11px;color:var(--yellow-dim);padding:4px 6px;font-style:italic;line-height:1.4}
   .ch-card{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(0,0,0,.25);border:1px solid var(--border);cursor:pointer;transition:all .2s}
   .ch-card:hover{background:rgba(255,215,0,.08);border-color:var(--yellow);transform:translateX(2px)}
@@ -91,11 +136,21 @@
   .ch-name{font-size:14px;font-weight:bold;color:var(--yellow)}
   .ch-desc{font-size:10px;color:var(--yellow-dim);margin-top:1px}
   .ch-key{font-size:9px;color:var(--blue-bright);font-family:'Courier New',monospace;background:rgba(77,184,255,.1);border:1px solid rgba(77,184,255,.2);padding:1px 5px;flex-shrink:0}
+  .ch-collapse-toggle{font-size:9px;color:var(--blue-bright);cursor:pointer;padding:3px 8px;text-align:center;font-family:'Courier New',monospace;letter-spacing:1px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.2)}
+  .ch-collapse-toggle:hover{color:var(--yellow);background:rgba(255,215,0,.05)}
   .open-windows-bar{padding:6px;border-top:1px solid var(--border);flex-shrink:0}
   .open-windows-label{font-size:9px;color:var(--blue-bright);letter-spacing:2px;text-transform:uppercase;font-family:Arial;margin-bottom:4px}
   .open-windows-list{display:flex;flex-wrap:wrap;gap:3px}
   .open-win-tag{font-size:9px;background:rgba(255,51,51,.15);border:1px solid rgba(255,51,51,.3);color:var(--yellow);padding:2px 6px;display:flex;align-items:center;gap:4px;cursor:pointer}
   .open-win-tag .dot{width:4px;height:4px;border-radius:50%;background:var(--red);animation:pulse 1s infinite}
+  /* Intel panel tabs */
+  .intel-tabs{display:flex;gap:0;flex-shrink:0;border-bottom:1px solid var(--border)}
+  .intel-tab{flex:1;text-align:center;padding:5px 8px;font-size:11px;font-weight:bold;letter-spacing:1px;cursor:pointer;background:rgba(0,0,0,.3);color:var(--yellow-dim);border-right:1px solid var(--border);font-family:'Courier New',monospace;text-transform:uppercase;transition:background .15s}
+  .intel-tab:last-child{border-right:none}
+  .intel-tab:hover{background:rgba(255,215,0,.08);color:var(--yellow)}
+  .intel-tab.active{background:rgba(255,215,0,.12);color:var(--yellow);border-bottom:2px solid var(--yellow)}
+  .intel-panel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+  .intel-panel.active{display:flex}
   .bsky-tabs{display:flex;flex-wrap:wrap;gap:2px;padding:3px 4px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);flex-shrink:0}
   .bsky-tab{background:var(--blue-dark);border:1px solid var(--border);color:var(--yellow-dim);font-size:9px;font-family:'Times New Roman',serif;font-weight:bold;padding:2px 6px;cursor:pointer;white-space:nowrap}
   .bsky-tab:hover{color:var(--yellow);border-color:var(--yellow)}
@@ -121,10 +176,21 @@
   .watchlist-tag{font-size:9px;background:rgba(255,51,51,.2);border:1px solid rgba(255,51,51,.4);color:var(--yellow);padding:1px 6px;display:flex;align-items:center;gap:3px;cursor:default}
   .watchlist-tag .tag-x{cursor:pointer;color:var(--red);font-weight:bold;font-size:11px}
   .watchlist-tag .tag-x:hover{color:white}
+  /* Situation summary */
+  .situation-summary{padding:8px 10px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);flex-shrink:0;font-size:10px;color:var(--yellow-dim);line-height:1.6;font-family:'Courier New',monospace}
+  .situation-summary-title{font-size:9px;color:var(--orange);font-weight:bold;letter-spacing:2px;margin-bottom:4px;text-transform:uppercase}
+  .situation-summary-line{margin:1px 0}
   .alerts-body{flex:1;overflow-y:auto;min-height:0}
-  .alert-item{padding:6px 10px;border-bottom:1px solid rgba(255,51,51,.15);cursor:pointer;transition:background .15s}
+  /* Alert groups by keyword */
+  .alert-group{border-bottom:1px solid rgba(255,51,51,.15)}
+  .alert-group-header{padding:5px 10px;background:rgba(255,51,51,.08);cursor:pointer;display:flex;align-items:center;gap:6px;font-size:10px;font-weight:bold;color:var(--red);font-family:'Courier New',monospace;letter-spacing:1px;text-transform:uppercase}
+  .alert-group-header:hover{background:rgba(255,51,51,.15)}
+  .alert-group-count{font-size:9px;background:var(--red);color:white;padding:0 5px;border-radius:8px;font-weight:bold}
+  .alert-group-toggle{font-size:8px;color:var(--yellow-dim);margin-left:auto}
+  .alert-group-items{display:none}
+  .alert-group.open .alert-group-items{display:block}
+  .alert-item{padding:6px 10px;border-bottom:1px solid rgba(255,51,51,.08);cursor:pointer;transition:background .15s}
   .alert-item:hover{background:rgba(255,51,51,.08)}
-  .alert-item-keyword{font-size:9px;color:var(--red);font-weight:bold;font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:1px}
   .alert-item-title{font-size:12px;line-height:1.4;color:var(--yellow);margin-top:2px}
   .alert-item-meta{font-size:9px;color:var(--yellow-dim);margin-top:2px;display:flex;gap:8px}
   .alert-badge{background:var(--red);color:white;font-size:9px;font-weight:bold;padding:0 5px;border-radius:8px;font-family:'Courier New',monospace;min-width:16px;text-align:center;margin-left:4px}
@@ -134,7 +200,7 @@
   .breaking-cluster-sources{font-size:9px;color:var(--yellow-dim)}
   .breaking-cluster-count{font-size:9px;color:var(--red);font-weight:bold}
   /* Ticker */
-  .ticker-bar{display:flex;align-items:center;background:linear-gradient(180deg,#0d2a5c,#081a3a);border-top:1px solid var(--border-bright);overflow:hidden}
+  .ticker-bar{display:flex;align-items:center;background:linear-gradient(180deg,#0d2a5c,#081a3a);border-top:1px solid var(--border-bright);overflow:hidden;position:relative}
   .ticker-label{flex-shrink:0;padding:0 12px;font-weight:bold;font-size:11px;letter-spacing:2px;background:var(--red);color:white;height:100%;display:flex;align-items:center;font-family:'Courier New',monospace}
   .ticker-content{flex:1;overflow:hidden;overflow-x:auto;white-space:nowrap;padding-left:8px;padding-right:64px;scroll-behavior:smooth}
   .ticker-content::-webkit-scrollbar{height:4px}
@@ -142,32 +208,21 @@
   .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 60s linear infinite;font-size:14px}
   .ticker-scroll:hover{animation-play-state:paused}
   @keyframes ticker-move{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
-  .ticker-src{color:var(--blue-bright);font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
-  .ticker-bsky{color:#0085ff;font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
-  .ticker-sep{color:var(--yellow-dim);margin:0 18px}
   .stock-sym{font-weight:bold;font-family:'Courier New',monospace;font-size:12px;color:var(--blue-bright);letter-spacing:1px}
   .stock-price{font-family:'Courier New',monospace;font-size:13px;color:var(--yellow);margin:0 3px}
   .stock-up{color:var(--green)}
   .stock-down{color:var(--red)}
   .stock-flat{color:var(--yellow-dim)}
   .stock-change{font-family:'Courier New',monospace;font-size:11px;margin-left:2px}
+  .ticker-sep{color:var(--yellow-dim);margin:0 18px}
+  .globe-container{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:5}
+  .globe-canvas{border-radius:50%;box-shadow:0 0 10px rgba(0,255,100,.15)}
   .kbd-hint{position:fixed;bottom:40px;right:8px;font-size:8px;color:rgba(255,215,0,.25);z-index:10;font-family:Arial;letter-spacing:.5px}
   .resize-handle{position:absolute;bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize;z-index:5}
   .resize-handle::after{content:'';position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-right:2px solid var(--yellow-dim);border-bottom:2px solid var(--yellow-dim);opacity:.4}
   .resize-handle:hover::after{opacity:.8}
-  /* Intel panel tabs */
-  .intel-tabs{display:flex;gap:0;flex-shrink:0;border-bottom:1px solid var(--border)}
-  .intel-tab{flex:1;text-align:center;padding:5px 8px;font-size:11px;font-weight:bold;letter-spacing:1px;cursor:pointer;background:rgba(0,0,0,.3);color:var(--yellow-dim);border-right:1px solid var(--border);font-family:'Courier New',monospace;text-transform:uppercase;transition:background .15s}
-  .intel-tab:last-child{border-right:none}
-  .intel-tab:hover{background:rgba(255,215,0,.08);color:var(--yellow)}
-  .intel-tab.active{background:rgba(255,215,0,.12);color:var(--yellow);border-bottom:2px solid var(--yellow)}
-  .intel-panel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden}
-  .intel-panel.active{display:flex}
+  #win-main .win-titlebar{background:linear-gradient(90deg,#1a3a7a,#2a5aaa)}
   #win-intel .win-titlebar{background:linear-gradient(90deg,#1a1a5a,#3a2a8a)}
-  /* 3D Globe */
-  .globe-container{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:5}
-  .globe-canvas{border-radius:50%;box-shadow:0 0 10px rgba(0,255,100,.15)}
-  .ticker-bar{position:relative}
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:rgba(255,215,0,.2);border-radius:3px}
@@ -201,56 +256,70 @@
     </div>
     <div class="filter-bar">
       <label>SEARCH:</label>
-      <input class="filter-input" id="filter-input" type="text" placeholder="Type topic + Enter to search all feeds & Bluesky (e.g. iran, nuclear, ukraine)">
+      <input class="filter-input" id="filter-input" type="text" placeholder="Search all feeds & Bluesky...">
       <button class="filter-btn" onclick="executeSearch()">SEARCH</button>
       <span class="filter-count" id="filter-count"></span>
       <span class="filter-active-tag" id="filter-tag">Searching: <b id="filter-tag-term"></b> <span style="cursor:pointer;margin-left:4px" onclick="clearFilter()">&#10005;</span></span>
+      <div class="time-filter-group">
+        <span class="time-filter-label">WINDOW:</span>
+        <button class="time-filter-btn" onclick="setTimeWindow(1)" id="tw-1h">1H</button>
+        <button class="time-filter-btn" onclick="setTimeWindow(6)" id="tw-6h">6H</button>
+        <button class="time-filter-btn" onclick="setTimeWindow(24)" id="tw-24h">24H</button>
+        <button class="time-filter-btn active" onclick="setTimeWindow(0)" id="tw-all">ALL</button>
+      </div>
       <button class="filter-btn" onclick="clearFilter()" style="margin-left:auto">CLEAR / SHOW ALL</button>
+    </div>
+    <div class="region-heat-bar" id="region-heat-bar">
+      <span class="region-heat-label">ACTIVITY:</span>
+      <div class="region-heat-segment us" id="rh-us" style="flex:1">US 0</div>
+      <div class="region-heat-segment eu" id="rh-eu" style="flex:1">EU 0</div>
+      <div class="region-heat-segment me" id="rh-me" style="flex:1">ME 0</div>
+      <div class="region-heat-segment apac" id="rh-apac" style="flex:1">APAC 0</div>
+      <div class="region-heat-segment other" id="rh-other" style="flex:1">OTHER 0</div>
+    </div>
+    <div class="trending-strip" id="trending-strip">
+      <span class="trending-label">TRENDING:</span>
+      <span style="font-size:9px;color:var(--yellow-dim);font-style:italic">Analyzing...</span>
     </div>
   </div>
   <div class="main-content" id="main-grid">
-    <!-- World News -->
-    <div class="win" id="win-world">
+    <!-- Main Feed (merged World+Security+Bluesky with tabs) — 45% -->
+    <div class="win" id="win-main">
       <div class="win-titlebar">
-        <span class="win-titlebar-text" id="title-world">World News</span>
-        <span class="win-updated" id="updated-world"></span>
+        <span class="win-titlebar-text" id="title-main">Primary Feed</span>
+        <span class="win-updated" id="updated-main"></span>
         <div class="win-btns">
-          <button class="win-btn" onclick="toggleMin('win-world')" title="Minimize">_</button>
-          <button class="win-btn" onclick="toggleMax('win-world')" title="Maximize">&#9633;</button>
+          <button class="win-btn" onclick="toggleMin('win-main')" title="Minimize">_</button>
+          <button class="win-btn" onclick="toggleMax('win-main')" title="Maximize">&#9633;</button>
         </div>
       </div>
-      <div class="feed-health" id="health-world"></div>
-      <div class="win-body" id="feed-world"></div>
-      <div class="resize-handle" data-win="win-world"></div>
-    </div>
-    <!-- Intel: Security/OSINT + Bluesky combined -->
-    <div class="win" id="win-intel">
-      <div class="win-titlebar">
-        <span class="win-titlebar-text" id="title-intel">Intel &amp; OSINT</span>
-        <span class="win-updated" id="updated-intel"></span>
-        <div class="win-btns">
-          <button class="win-btn" onclick="toggleMin('win-intel')" title="Minimize">_</button>
-          <button class="win-btn" onclick="toggleMax('win-intel')" title="Maximize">&#9633;</button>
-        </div>
+      <div class="intel-tabs" id="main-tabs">
+        <div class="intel-tab active" onclick="switchMainTab('all')">All RSS</div>
+        <div class="intel-tab" onclick="switchMainTab('security')">Security</div>
+        <div class="intel-tab" onclick="switchMainTab('bluesky')">Bluesky</div>
       </div>
-      <div class="intel-tabs">
-        <div class="intel-tab active" onclick="switchIntelTab('security')">Security RSS</div>
-        <div class="intel-tab" onclick="switchIntelTab('bluesky')">Bluesky</div>
+      <!-- All RSS panel -->
+      <div class="intel-panel active" id="panel-all">
+        <div class="feed-health" id="health-all"></div>
+        <div class="pinned-breaking" id="pinned-breaking"></div>
+        <div class="win-body" id="feed-all"></div>
       </div>
-      <div class="intel-panel active" id="intel-security">
+      <!-- Security panel -->
+      <div class="intel-panel" id="panel-security">
         <div class="feed-health" id="health-security"></div>
         <div class="win-body" id="feed-security"></div>
       </div>
-      <div class="intel-panel" id="intel-bluesky">
+      <!-- Bluesky panel -->
+      <div class="intel-panel" id="panel-bluesky">
         <div class="bsky-tabs" id="bsky-tabs"></div>
         <div class="bsky-search-note" id="bsky-search-note"></div>
         <div class="bsky-feed" id="bsky-feed">
           <div class="bsky-loading">Loading Bluesky feeds...</div>
         </div>
       </div>
-      <div class="resize-handle" data-win="win-intel"></div>
+      <div class="resize-handle" data-win="win-main"></div>
     </div>
-    <!-- Alerts / Watchlist -->
+    <!-- Alerts / Watchlist — 20% sidebar -->
     <div class="win" id="win-alerts">
       <div class="win-titlebar">
         <span class="win-titlebar-text" id="title-alerts">Alerts</span>
@@ -264,12 +333,16 @@
       <div class="watchlist-bar" id="watchlist-bar">
         <input class="watchlist-input" id="watchlist-input" type="text" placeholder="+keyword" title="Type a keyword and press Enter to add to watchlist">
       </div>
+      <div class="situation-summary" id="situation-summary">
+        <div class="situation-summary-title">SITUATION SUMMARY</div>
+        <div class="situation-summary-line">Initializing...</div>
+      </div>
       <div class="alerts-body" id="alerts-body">
         <div class="alert-empty">Add keywords above to monitor.<br>Matching headlines will appear here with desktop notifications.</div>
       </div>
       <div class="resize-handle" data-win="win-alerts"></div>
     </div>
-    <!-- Live Broadcast Channels -->
+    <!-- Live Broadcast Channels — 35% -->
     <div class="win" id="win-video">
       <div class="win-titlebar">
         <span class="win-titlebar-text">Live Broadcast Channels</span>
@@ -278,6 +351,7 @@
           <button class="win-btn" onclick="toggleMax('win-video')" title="Maximize">&#9633;</button>
         </div>
       </div>
+      <div class="ch-collapse-toggle" id="ch-collapse-toggle" onclick="toggleChannelView()">COMPACT VIEW</div>
       <div class="channels-body" id="channels-body"></div>
       <div class="open-windows-bar">
         <div class="open-windows-label">Open Feeds</div>
@@ -302,8 +376,8 @@
 // ── Cached DOM refs ──
 const $ = id => document.getElementById(id);
 const DOM = {
-  feedWorld: $('feed-world'), feedSec: $('feed-security'),
-  titleWorld: $('title-world'), titleIntel: $('title-intel'),
+  feedAll: $('feed-all'), feedSec: $('feed-security'),
+  titleMain: $('title-main'),
   sysFeeds: $('sys-feeds'), sysItems: $('sys-items'), sysUptime: $('sys-uptime'),
   filterInput: $('filter-input'), filterCount: $('filter-count'),
   filterTag: $('filter-tag'), filterTagTerm: $('filter-tag-term'),
@@ -311,26 +385,31 @@ const DOM = {
   bskySearchNote: $('bsky-search-note'),
   ticker: $('ticker'), channelsBody: $('channels-body'),
   openWinList: $('open-windows-list'), mainGrid: $('main-grid'),
-  healthWorld: $('health-world'), healthSec: $('health-security'),
-  updatedWorld: $('updated-world'), updatedIntel: $('updated-intel'),
+  healthAll: $('health-all'), healthSec: $('health-security'),
+  updatedMain: $('updated-main'),
   updatedAlerts: $('updated-alerts'),
   alertsBody: $('alerts-body'), alertBadge: $('alert-badge'),
   titleAlerts: $('title-alerts'), watchlistBar: $('watchlist-bar'),
   watchlistInput: $('watchlist-input'), breakingIndicator: $('breaking-indicator'),
-  intelSecPanel: $('intel-security'), intelBskyPanel: $('intel-bluesky'),
+  pinnedBreaking: $('pinned-breaking'),
+  situationSummary: $('situation-summary'),
+  regionHeatBar: $('region-heat-bar'),
+  trendingStrip: $('trending-strip'),
+  chCollapseToggle: $('ch-collapse-toggle'),
+  panelAll: $('panel-all'), panelSecurity: $('panel-security'), panelBluesky: $('panel-bluesky'),
+  mainTabs: $('main-tabs'),
   clocks: [['ck-la','America/Los_Angeles'],['ck-nyc','America/New_York'],
     ['ck-lon','Europe/London'],['ck-tlv','Asia/Jerusalem'],
     ['ck-mow','Europe/Moscow'],['ck-bjs','Asia/Shanghai'],['ck-tyo','Asia/Tokyo']]
     .map(([id,tz])=>({el:$(id),tz}))
 };
 
-// ── Window management: drag, resize, z-index ──
-const winIds = ['win-world','win-intel','win-alerts','win-video'];
+// ── Window management: 3 panels ──
+const winIds = ['win-main','win-alerts','win-video'];
 const defaultLayout = {
-  'win-world':    [0,   0, 18, 100],
-  'win-intel':    [18,  0, 18, 100],
-  'win-alerts':   [36,  0, 34, 100],
-  'win-video':    [70,  0, 30, 100],
+  'win-main':   [0,  0, 45, 100],
+  'win-alerts': [45, 0, 20, 100],
+  'win-video':  [65, 0, 35, 100],
 };
 const GAP = 2;
 let topZ = 10;
@@ -362,30 +441,30 @@ function focusAlerts(){
   el.classList.remove('minimized');
   bringToFront(el);
 }
+
+// ── Breaking dismiss ──
+let breakingDismissedUntil = 0;
 function dismissBreaking(){
-  // Reset breaking news to 0 — clear indicator and all breaking clusters
   DOM.breakingIndicator.classList.remove('show','dismissed');
   DOM.breakingIndicator.innerHTML = 'BREAKING<div class="breaking-popup" id="breaking-popup"></div>';
-  // Remove breaking clusters from alerts panel
   document.querySelectorAll('.breaking-cluster').forEach(el => el.remove());
-  // Suppress re-detection for 10 minutes
+  DOM.pinnedBreaking.classList.remove('show');
+  DOM.pinnedBreaking.innerHTML = '';
   breakingDismissedUntil = Date.now() + 10 * 60 * 1000;
 }
-let breakingDismissedUntil = 0;
 
-// ── Intel panel tab switcher ──
-function switchIntelTab(tab){
-  const tabs = document.querySelectorAll('.intel-tab');
-  const panels = document.querySelectorAll('.intel-panel');
+// ── Main panel tab switcher ──
+let currentMainTab = 'all';
+function switchMainTab(tab){
+  currentMainTab = tab;
+  const tabs = DOM.mainTabs.querySelectorAll('.intel-tab');
   tabs.forEach(t => t.classList.remove('active'));
-  panels.forEach(p => p.classList.remove('active'));
-  if(tab === 'security'){
-    tabs[0].classList.add('active');
-    DOM.intelSecPanel.classList.add('active');
-  } else {
-    tabs[1].classList.add('active');
-    DOM.intelBskyPanel.classList.add('active');
-  }
+  DOM.panelAll.classList.remove('active');
+  DOM.panelSecurity.classList.remove('active');
+  DOM.panelBluesky.classList.remove('active');
+  if(tab === 'all'){ tabs[0].classList.add('active'); DOM.panelAll.classList.add('active'); }
+  else if(tab === 'security'){ tabs[1].classList.add('active'); DOM.panelSecurity.classList.add('active'); }
+  else { tabs[2].classList.add('active'); DOM.panelBluesky.classList.add('active'); }
 }
 
 // ── Drag ──
@@ -450,8 +529,8 @@ function toggleMax(id){
   bringToFront(el);
 }
 
-// ── Auto-scroll via setInterval (more efficient than rAF for slow updates) ──
-const scrollPanels = [DOM.feedWorld].filter(Boolean);
+// ── Auto-scroll ──
+const scrollPanels = [DOM.feedAll].filter(Boolean);
 const scrollPause = new Map();
 scrollPanels.forEach(el => {
   scrollPause.set(el, 0);
@@ -461,7 +540,7 @@ setInterval(() => {
   const now = Date.now();
   scrollPanels.forEach(el => {
     if (now < scrollPause.get(el)) return;
-    if (el.closest('.win')?.classList.contains('minimized')) return; // Skip minimized panels
+    if (el.closest('.win')?.classList.contains('minimized')) return;
     el.scrollTop += 0.5;
     if (el.scrollTop >= el.scrollHeight - el.clientHeight - 5) el.scrollTop = 0;
   });
@@ -470,10 +549,39 @@ setInterval(() => {
 // ── Utility ──
 function stripHTML(s){return(s||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim()}
 function escapeAttr(s){return(s||'').replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function timeAgo(d){const m=Math.floor((Date.now()-new Date(d).getTime())/60000);if(m<1)return'NOW';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return(h/24|0)+'d'}
+
+// Feature #4: Fix timestamps — show granular "2m", "7m", "23m" not just "NOW"
+function timeAgo(d){
+  const ms = Date.now() - new Date(d).getTime();
+  if(ms < 0 || isNaN(ms)) return '?';
+  const sec = Math.floor(ms/1000);
+  if(sec < 30) return 'JUST NOW';
+  const m = Math.floor(sec/60);
+  if(m < 1) return '<1m';
+  if(m < 60) return m+'m';
+  const h = Math.floor(m/60);
+  if(h < 24) return h+'h';
+  return (h/24|0)+'d';
+}
 function timeStamp(){return new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'})}
 
-// ── Concurrency limiter — prevents network flooding ──
+// ── Time window filter (Feature #12) ──
+let timeWindowHours = 0; // 0 = ALL
+function setTimeWindow(hours){
+  timeWindowHours = hours;
+  document.querySelectorAll('.time-filter-btn').forEach(b => b.classList.remove('active'));
+  const id = hours === 0 ? 'tw-all' : `tw-${hours}h`;
+  $(id)?.classList.add('active');
+  renderCurrentFeeds();
+}
+
+function filterByTimeWindow(items){
+  if(timeWindowHours === 0) return items;
+  const cutoff = Date.now() - timeWindowHours * 60 * 60 * 1000;
+  return items.filter(i => new Date(i.pubDate).getTime() > cutoff);
+}
+
+// ── Concurrency limiter ──
 function asyncPool(limit, items, fn) {
   const results = [];
   let i = 0;
@@ -501,9 +609,25 @@ function sendNotif(title, body, tag){
   }
 }
 
+// ── Feature #11: Audio chime on breaking news ──
+let audioCtx = null;
+function playBreakingChime(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine'; osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.8);
+  }catch(e){}
+}
+
 // ── Watchlist / Alerts System ──
 let watchlist = ['iran','nuclear','taiwan','ukraine','russia nato','missile strike','cyberattack','coup','sanctions','hezbollah','houthi'];
-const alertItems = []; // {keyword, title, link, source, time, type:'rss'|'bsky'}
+const alertItems = [];
 const seenAlertKeys = new Set();
 
 function renderWatchlistTags(){
@@ -549,32 +673,51 @@ function checkItemAgainstWatchlist(item, type){
   });
 }
 
+// Feature #16: Grouped alerts by keyword
 function renderAlerts(){
-  // Remove anything older than 24 hours
   const cutoff = Date.now() - 24*60*60*1000;
   for(let i = alertItems.length-1; i >= 0; i--){
     if(new Date(alertItems[i].time).getTime() < cutoff) alertItems.splice(i,1);
   }
-  // Sort most recent first
   alertItems.sort((a,b) => new Date(b.time) - new Date(a.time));
 
   if(!alertItems.length){
-    DOM.alertsBody.innerHTML = '<div class="alert-empty">Add keywords above to monitor.<br>Matching headlines will appear here with desktop notifications.</div>';
+    DOM.alertsBody.innerHTML = '<div class="alert-empty">Add keywords above to monitor.<br>Matching headlines will appear here.</div>';
     DOM.alertBadge.style.display = 'none';
     return;
   }
   DOM.alertBadge.style.display = 'inline';
   DOM.alertBadge.textContent = alertItems.length;
-  // Use DocumentFragment for efficient DOM update
+
+  // Group by keyword
+  const groups = {};
+  alertItems.forEach(a => {
+    if(!groups[a.keyword]) groups[a.keyword] = [];
+    groups[a.keyword].push(a);
+  });
+
   const frag = document.createDocumentFragment();
-  alertItems.slice(0,100).forEach(a => {
-    const div = document.createElement('div');
-    div.className = 'alert-item';
-    div.onclick = () => window.open(a.link, '_blank');
-    div.innerHTML = `<div class="alert-item-keyword">${escapeAttr(a.keyword)}</div>
-      <div class="alert-item-title">${escapeAttr(a.title)}</div>
-      <div class="alert-item-meta"><span>${timeAgo(a.time)}</span><span>${escapeAttr(a.source)}</span><span>${a.type}</span></div>`;
-    frag.appendChild(div);
+  // Keep breaking clusters at top
+  document.querySelectorAll('.breaking-cluster').forEach(el => frag.appendChild(el.cloneNode(true)));
+
+  Object.entries(groups).sort((a,b) => b[1].length - a[1].length).forEach(([kw, items]) => {
+    const group = document.createElement('div');
+    group.className = 'alert-group open';
+    group.innerHTML = `<div class="alert-group-header" onclick="this.parentElement.classList.toggle('open')">
+      <span>${escapeAttr(kw.toUpperCase())}</span>
+      <span class="alert-group-count">${items.length}</span>
+      <span class="alert-group-toggle">&#9660;</span>
+    </div><div class="alert-group-items"></div>`;
+    const itemsEl = group.querySelector('.alert-group-items');
+    items.slice(0,20).forEach(a => {
+      const div = document.createElement('div');
+      div.className = 'alert-item';
+      div.onclick = () => window.open(a.link, '_blank');
+      div.innerHTML = `<div class="alert-item-title">${escapeAttr(a.title)}</div>
+        <div class="alert-item-meta"><span>${timeAgo(a.time)}</span><span>${escapeAttr(a.source)}</span></div>`;
+      itemsEl.appendChild(div);
+    });
+    frag.appendChild(group);
   });
   DOM.alertsBody.innerHTML = '';
   DOM.alertsBody.appendChild(frag);
@@ -597,16 +740,16 @@ function tokenize(text){
   return text.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w));
 }
 
+let lastBreakingChime = 0;
 function detectBreakingNews(){
   const now = Date.now();
   const recentWindow = 30 * 60 * 1000;
   if(now < breakingDismissedUntil && DOM.breakingIndicator.classList.contains('show')) return;
   const recent = allItems.filter(i => (now - new Date(i.pubDate).getTime()) < recentWindow);
-  if(recent.length < 3){ DOM.breakingIndicator.classList.remove('show'); return; }
+  if(recent.length < 3){ DOM.breakingIndicator.classList.remove('show'); DOM.pinnedBreaking.classList.remove('show'); return; }
 
   const clusters = [];
   const used = new Set();
-  // Pre-tokenize all recent items (avoid re-tokenizing in inner loop)
   const tokenized = recent.map(i => tokenize(i.title||''));
   const tokenSets = tokenized.map(t => new Set(t));
   for(let i = 0; i < recent.length; i++){
@@ -617,7 +760,6 @@ function detectBreakingNews(){
     for(let j = i+1; j < recent.length; j++){
       if(used.has(j)) continue;
       if(sources.has(recent[j].sourceName)) continue;
-      // Use Set intersection for O(min(n,m)) instead of O(n*m)
       let overlap = 0;
       for(const t of tokenized[i]){ if(tokenSets[j].has(t)) overlap++; }
       if(overlap >= 3){
@@ -633,16 +775,23 @@ function detectBreakingNews(){
 
   if(clusters.length > 0){
     DOM.breakingIndicator.classList.add('show');
-    // Keep the text + popup inside
     DOM.breakingIndicator.innerHTML = `BREAKING (${clusters.length})<div class="breaking-popup" id="breaking-popup"></div>`;
-    // Populate hover popup
     $('breaking-popup').innerHTML = clusters.map(c =>
       `<div class="breaking-popup-item" onclick="event.stopPropagation();window.open('${escapeAttr(c.items[0].link||'')}','_blank')">
         <div class="breaking-popup-title">${escapeAttr((c.items[0].title||'').substring(0,150))}</div>
         <div class="breaking-popup-meta">${c.sources.map(s=>escapeAttr(s)).join(' / ')} — ${c.items.length} sources</div>
       </div>`
     ).join('');
-    // Also add clusters to alerts panel
+
+    // Feature #5: Pinned breaking story at top of main feed
+    const top = clusters[0];
+    DOM.pinnedBreaking.classList.add('show');
+    DOM.pinnedBreaking.innerHTML = `<div class="pinned-breaking-label">BREAKING — ${top.sources.length} SOURCES</div>
+      <div class="pinned-breaking-title">${escapeAttr((top.items[0].title||'').substring(0,200))}</div>
+      <div class="pinned-breaking-meta">${top.sources.map(s=>escapeAttr(s)).join(' / ')} — ${timeAgo(top.items[0].pubDate)}</div>`;
+    DOM.pinnedBreaking.onclick = () => window.open(top.items[0].link||'','_blank');
+
+    // Breaking clusters in alerts
     const clusterHTML = clusters.map(c =>
       `<div class="breaking-cluster">
         <div class="breaking-cluster-title">${escapeAttr(c.items[0].title||'').substring(0,120)}</div>
@@ -654,13 +803,19 @@ function detectBreakingNews(){
     if(!existing.includes('breaking-cluster')){
       DOM.alertsBody.innerHTML = clusterHTML + existing;
     }
+    // Feature #11: Audio chime
+    if(now - lastBreakingChime > 60000){
+      playBreakingChime();
+      lastBreakingChime = now;
+    }
     sendNotif('BREAKING NEWS', stripHTML(clusters[0].items[0].title||'').substring(0,100), 'breaking-' + Date.now());
   } else {
     DOM.breakingIndicator.classList.remove('show');
+    DOM.pinnedBreaking.classList.remove('show');
   }
 }
 
-// ── Live channels (expanded) ──
+// ── Live channels with collapsible view (Feature #6) ──
 const channels = [
   {name:'Al Jazeera English',handle:'AlJazeeraEnglish',desc:'24/7 — strongest Middle East coverage',region:'ME'},
   {name:'France 24 (FR)',handle:'france24',desc:'24/7 — French language, Africa/EU/ME',region:'EU'},
@@ -680,6 +835,27 @@ const channels = [
   {name:'ABC News AU',handle:'abcnewsaustralia',desc:'24/7 — Australian Broadcasting Corp',region:'APAC'},
 ];
 const openWindows = {};
+let channelsCompact = false;
+
+function toggleChannelView(){
+  channelsCompact = !channelsCompact;
+  DOM.chCollapseToggle.textContent = channelsCompact ? 'EXPANDED VIEW' : 'COMPACT VIEW';
+  renderChannels();
+}
+
+function renderChannels(){
+  if(channelsCompact){
+    DOM.channelsBody.innerHTML = '<div class="channels-compact">' +
+      channels.map((c,i) => `<div class="ch-compact-btn" onclick="openChannel(${i})" title="${c.name} — ${c.desc}">${i+1}<div class="ch-compact-dot"></div></div>`).join('') +
+      '</div>';
+  } else {
+    DOM.channelsBody.innerHTML =
+      '<div class="channels-hint">Click to open in popup window. Keys 1-0 for quick launch.</div>'+
+      channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i+1}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
+  }
+}
+renderChannels();
+
 function openChannel(i){
   const c=channels[i],url=`https://www.youtube.com/@${c.handle}/live`;
   const n=Object.keys(openWindows).length;
@@ -691,11 +867,8 @@ function updateOpenWins(){
   const hs=Object.keys(openWindows);
   DOM.openWinList.innerHTML=hs.length?hs.map(h=>`<span class="open-win-tag" onclick="focusChannel('${h}')"><span class="dot"></span>${openWindows[h].name}</span>`).join(''):'<span style="font-size:10px;color:var(--yellow-dim);font-style:italic">Click a channel above to open</span>';
 }
-DOM.channelsBody.innerHTML=
-  '<div class="channels-hint">Click to open in popup window. Multiple channels can be open simultaneously. Keys 1-0 for quick launch.</div>'+
-  channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i+1}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
 
-// ── Bluesky OSINT feeds (expanded) ──
+// ── Bluesky OSINT feeds ──
 const BSKY_API = 'https://public.api.bsky.app/xrpc/';
 const bskyAccounts = [
   {handle:'wartranslated.bsky.social',label:'WarTranslated'},
@@ -764,7 +937,6 @@ function postToUrl(uri,handle){
 
 function renderBskyPosts(posts){
   if(!posts.length){DOM.bskyFeed.innerHTML='<div class="bsky-loading">No posts found</div>';return;}
-  // Use DocumentFragment for batch DOM insert
   const frag = document.createDocumentFragment();
   posts.forEach(p => {
     const url = postToUrl(p.uri, p.handle);
@@ -783,18 +955,17 @@ function renderBskyPosts(posts){
 async function loadBskyFeed(handle){
   DOM.bskyFeed.innerHTML=`<div class="bsky-loading">Loading @${handle}...</div>`;
   renderBskyPosts(await fetchBskyFeed(handle));
-  DOM.updatedIntel.textContent = timeStamp();
+  DOM.updatedMain.textContent = timeStamp();
 }
 
 async function loadBskyAll(){
   DOM.bskyFeed.innerHTML='<div class="bsky-loading">Loading all OSINT feeds...</div>';
-  // Use concurrency limiter (4 at a time instead of all 15 at once)
   const results = await asyncPool(4, bskyAccounts, a => fetchBskyFeed(a.handle));
   let allPosts = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
   allPosts.sort((a,b)=>new Date(b.time)-new Date(a.time));
   bskyTickerPosts = allPosts.slice(0,15);
   renderBskyPosts(allPosts.slice(0,80));
-  DOM.updatedIntel.textContent = timeStamp();
+  DOM.updatedMain.textContent = timeStamp();
   renderAlerts();
 }
 
@@ -802,7 +973,6 @@ async function loadBskySearch(query){
   bskySearchMode=true; renderBskyTabs();
   DOM.bskySearchNote.textContent=`Bluesky search: "${query}"`;
   DOM.bskySearchNote.classList.add('show');
-  DOM.titleIntel.textContent=`Search: ${query}`;
   DOM.bskyFeed.innerHTML=`<div class="bsky-loading">Searching Bluesky for "${query}"...</div>`;
   try{
     const r=await fetch(`${BSKY_API}app.bsky.feed.searchPosts?q=${encodeURIComponent(query)}&limit=30&sort=latest`,{signal:AbortSignal.timeout(10000)});
@@ -819,13 +989,13 @@ async function loadBskySearch(query){
 renderBskyTabs();
 loadBskyAll();
 
-// ── RSS feeds with caching, dedup, concurrency limit, health tracking ──
+// ── RSS feeds ──
 const PROXIES = [
   url => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`,
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
 ];
 
-// Source priority: lower number = higher priority (shown first when timestamps are close)
+// Feature #14: Source color coding
 const SOURCE_PRIORITY = {
   'NYT':1,'NYT World':1,
   'WSJ':2,'WSJ World':2,
@@ -836,9 +1006,26 @@ const SOURCE_PRIORITY = {
   'Al Jazeera':7,
 };
 
+const SOURCE_COLOR = {
+  'NYT':'tier1','NYT World':'tier1','WSJ':'tier1','WSJ World':'tier1','Economist':'tier1','Financial Times':'tier1',
+  'Reuters':'wire','AP News':'wire','BBC World':'wire','NPR World':'wire','France 24':'wire','DW News':'wire',
+  'JPost':'israeli','Haaretz':'israeli','YNet':'israeli','Times of Israel':'israeli',
+  'Bellingcat':'security','War on the Rocks':'security','Lawfare':'security','The War Zone':'security',
+  'CSIS':'security','ICG':'security','RUSI':'security','Foreign Policy':'security','Defense One':'security',
+  'Krebs on Security':'security','The Record':'security','Just Security':'security',
+};
+
+// Feature #7: Region classification for heat bar
+const SOURCE_REGION = {
+  'NYT':'US','NYT World':'US','WSJ':'US','WSJ World':'US','NPR World':'US','AP News':'US',
+  'BBC World':'EU','France 24':'EU','DW News':'EU','euronews':'EU','Le Devoir':'EU','Le Monde':'EU','Globe & Mail':'EU',
+  'JPost':'ME','Haaretz':'ME','YNet':'ME','Times of Israel':'ME','Al Jazeera':'ME','i24NEWS':'ME',
+  'SCMP':'APAC','The Diplomat':'APAC','CNA':'APAC','NHK':'APAC','WION':'APAC',
+  'Reuters':'US','Economist':'EU','Financial Times':'EU','The Intercept':'US',
+};
+
 const feedConfig = {
   world: [
-    // Tier 1 — priority sources
     {name:'NYT',url:'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'},
     {name:'NYT World',url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml'},
     {name:'WSJ',url:'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain'},
@@ -847,7 +1034,6 @@ const feedConfig = {
     {name:'JPost',url:'https://www.jpost.com/rss'},
     {name:'Haaretz',url:'https://www.haaretz.com/srv/haaretz-late'},
     {name:'Al Jazeera',url:'https://www.aljazeera.com/xml/rss/all.xml'},
-    // Tier 2 — major wires & intl
     {name:'Reuters',url:'https://feeds.reuters.com/reuters/worldNews'},
     {name:'AP News',url:'https://rsshub.app/apnews/topics/world-news'},
     {name:'BBC World',url:'https://feeds.bbci.co.uk/news/world/rss.xml'},
@@ -856,7 +1042,6 @@ const feedConfig = {
     {name:'DW News',url:'https://rss.dw.com/rdf/rss-en-all'},
     {name:'SCMP',url:'https://www.scmp.com/rss/91/feed'},
     {name:'The Diplomat',url:'https://thediplomat.com/feed/'},
-    // Tier 3 — regional & niche
     {name:'YNet',url:'http://www.ynet.co.il/Integration/StoryRss3254.xml'},
     {name:'Times of Israel',url:'https://www.timesofisrael.com/feed/'},
     {name:'The Intercept',url:'https://theintercept.com/feed/?rss'},
@@ -880,54 +1065,79 @@ const feedConfig = {
   ],
 };
 
-const MAX_ITEMS = 600; // Cap allItems to prevent unbounded growth
-const RSS_CACHE_TTL = 180000; // 3-minute cache for RSS feeds
-const rssCache = {}; // {feedName: {items:[], ts:number}}
+const MAX_ITEMS = 600;
+const RSS_CACHE_TTL = 180000;
+const rssCache = {};
 
-let allItems = [], feedsLoaded = 0;
+let allItems = [], securityItems = [], feedsLoaded = 0;
 const totalFeeds = Object.values(feedConfig).flat().length;
 const feedHealth = {};
 
-// ── Deduplication ──
-const seenTitles = new Set();
+// ── Feature #13: Cross-panel deduplication ──
+const globalSeenTitles = new Set();
+function fingerprint(title){
+  return (title||'').toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,60);
+}
 function deduplicateItems(items){
   const out = [];
   for(const item of items){
-    const key = (item.title||'').toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,60);
-    if(!key || seenTitles.has(key)) continue;
-    seenTitles.add(key);
+    const key = fingerprint(item.title);
+    if(!key || globalSeenTitles.has(key)) continue;
+    globalSeenTitles.add(key);
     out.push(item);
   }
   return out;
 }
 
 function renderFeedHealth(panel, sources){
-  const el = panel === 'world' ? DOM.healthWorld : DOM.healthSec;
+  const el = panel === 'world' ? DOM.healthAll : DOM.healthSec;
+  if(!el) return;
   el.innerHTML = sources.map(s => {
     const status = feedHealth[s.name] || 'loading';
     return `<div class="feed-dot ${status}" title="${s.name}: ${status}"></div>`;
   }).join('');
 }
 
-function feedItemHTML(item){
-  const safe=escapeAttr(item.link||'');
-  const title=stripHTML(item.title).substring(0,200);
-  const desc=stripHTML(item.description||'').substring(0,200);
-  const preview = desc ? `<div class="feed-preview">${escapeAttr(desc)}</div>` : '';
-  return`<div class="feed-item" onclick="window.open('${safe}','_blank')"><div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${escapeAttr(title)}</div><div class="feed-item-source">${escapeAttr(item.sourceName)}</div>${preview}</div>`;
+// Feature #14: Source color class + Feature #10: Freshness decay + Feature #8: Inline expansion
+function getSourceClass(name){
+  const cat = SOURCE_COLOR[name];
+  if(cat === 'tier1') return 'src-tier1';
+  if(cat === 'wire') return 'src-wire';
+  if(cat === 'security') return 'src-security';
+  if(cat === 'israeli') return 'src-israeli';
+  return '';
 }
 
-// Build DOM via DocumentFragment instead of innerHTML concatenation
+function getFreshnessClass(pubDate){
+  const age = Date.now() - new Date(pubDate).getTime();
+  if(age < 10*60*1000) return 'fresh'; // <10 min
+  if(age > 2*60*60*1000) return 'stale'; // >2 hours
+  return '';
+}
+
 function renderFeedPanel(el, items){
   const frag = document.createDocumentFragment();
   items.forEach(item => {
     const div = document.createElement('div');
-    div.className = 'feed-item';
-    div.onclick = () => window.open(item.link || '', '_blank');
+    const srcClass = getSourceClass(item.sourceName);
+    const freshClass = getFreshnessClass(item.pubDate);
+    div.className = `feed-item ${srcClass} ${freshClass}`.trim();
+    // Feature #8: Click to expand, double-click to open
+    div.onclick = (e) => {
+      if(e.detail === 1){
+        setTimeout(() => {
+          if(div.dataset.dblclick) { div.dataset.dblclick = ''; return; }
+          div.classList.toggle('expanded');
+        }, 250);
+      }
+    };
+    div.ondblclick = () => {
+      div.dataset.dblclick = '1';
+      window.open(item.link || '', '_blank');
+    };
     const title = stripHTML(item.title).substring(0,200);
-    const desc = stripHTML(item.description||'').substring(0,200);
-    const preview = desc ? `<div class="feed-preview">${escapeAttr(desc)}</div>` : '';
-    div.innerHTML = `<div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${escapeAttr(title)}</div><div class="feed-item-source">${escapeAttr(item.sourceName)}</div>${preview}`;
+    const desc = stripHTML(item.description||'').substring(0,300);
+    div.innerHTML = `<div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${escapeAttr(title)}</div><div class="feed-item-source">${escapeAttr(item.sourceName)}</div>${desc ? `<div class="feed-item-desc">${escapeAttr(desc)}</div>` : ''}`;
     frag.appendChild(div);
   });
   el.innerHTML = '';
@@ -935,12 +1145,10 @@ function renderFeedPanel(el, items){
 }
 
 async function fetchFeed(src){
-  // Check RSS cache first
   if(rssCache[src.name] && Date.now() - rssCache[src.name].ts < RSS_CACHE_TTL){
     feedHealth[src.name] = 'cached';
     return rssCache[src.name].items;
   }
-
   feedHealth[src.name] = 'loading';
   for(let pi = 0; pi < PROXIES.length; pi++){
     try{
@@ -981,7 +1189,6 @@ async function fetchFeed(src){
     }catch(e){/* try next proxy */}
   }
   feedHealth[src.name] = 'fail';
-  // On failure, return stale cache if available
   if(rssCache[src.name]){
     feedHealth[src.name] = 'cached';
     return rssCache[src.name].items;
@@ -990,11 +1197,112 @@ async function fetchFeed(src){
   return[];
 }
 
+function sortWithPriority(items){
+  items.sort((a,b) => {
+    const timeDiff = new Date(b.pubDate) - new Date(a.pubDate);
+    if(Math.abs(timeDiff) < 30*60*1000){
+      const pa = SOURCE_PRIORITY[a.sourceName] || 99;
+      const pb = SOURCE_PRIORITY[b.sourceName] || 99;
+      if(pa !== pb) return pa - pb;
+    }
+    return timeDiff;
+  });
+  return items;
+}
+
+// ── Feature #7: Region heat bar ──
+function updateRegionHeatBar(){
+  const counts = {US:0, EU:0, ME:0, APAC:0, OTHER:0};
+  const recentCutoff = Date.now() - 60*60*1000; // last hour
+  allItems.forEach(item => {
+    if(new Date(item.pubDate).getTime() < recentCutoff) return;
+    const region = SOURCE_REGION[item.sourceName] || 'OTHER';
+    const key = ['US','EU','ME','APAC'].includes(region) ? region : 'OTHER';
+    counts[key]++;
+  });
+  const total = Math.max(Object.values(counts).reduce((a,b)=>a+b,0), 1);
+  ['us','eu','me','apac','other'].forEach(r => {
+    const el = $(`rh-${r}`);
+    const c = counts[r.toUpperCase()];
+    el.style.flex = Math.max(c/total, 0.05);
+    el.textContent = `${r.toUpperCase()} ${c}`;
+  });
+}
+
+// ── Feature #9: Trending keywords strip ──
+function updateTrendingKeywords(){
+  const recentCutoff = Date.now() - 60*60*1000;
+  const wordFreq = {};
+  const excludeWords = new Set([...STOP_WORDS, 'news','world','report','reports','live','update','updates','latest','breaking','today','day','week','year','first','last','people','us','uk','time','back','two','three','also','more','could','would','trump']);
+  allItems.forEach(item => {
+    if(new Date(item.pubDate).getTime() < recentCutoff) return;
+    const words = (item.title||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w => w.length > 3 && !excludeWords.has(w));
+    words.forEach(w => { wordFreq[w] = (wordFreq[w]||0) + 1; });
+  });
+  const sorted = Object.entries(wordFreq).filter(([,c]) => c >= 3).sort((a,b) => b[1] - a[1]).slice(0,12);
+  if(!sorted.length){
+    DOM.trendingStrip.innerHTML = '<span class="trending-label">TRENDING:</span><span style="font-size:9px;color:var(--yellow-dim);font-style:italic">Collecting data...</span>';
+    return;
+  }
+  DOM.trendingStrip.innerHTML = '<span class="trending-label">TRENDING:</span>' +
+    sorted.map(([word,count]) => `<span class="trending-kw" onclick="DOM.filterInput.value='${escapeAttr(word)}';executeSearch()" title="${count} mentions">${word} (${count})</span>`).join('');
+}
+
+// ── Feature #15: Auto-generated situation summary ──
+function updateSituationSummary(){
+  const now = Date.now();
+  const lastHour = allItems.filter(i => (now - new Date(i.pubDate).getTime()) < 60*60*1000);
+  const last6h = allItems.filter(i => (now - new Date(i.pubDate).getTime()) < 6*60*60*1000);
+
+  // Count sources active in last hour
+  const activeSources = new Set(lastHour.map(i => i.sourceName));
+
+  // Top region
+  const regionCounts = {};
+  lastHour.forEach(i => {
+    const r = SOURCE_REGION[i.sourceName] || 'Other';
+    regionCounts[r] = (regionCounts[r]||0) + 1;
+  });
+  const topRegion = Object.entries(regionCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  // Top source
+  const srcCounts = {};
+  lastHour.forEach(i => { srcCounts[i.sourceName] = (srcCounts[i.sourceName]||0) + 1; });
+  const topSrc = Object.entries(srcCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  // Top keyword from trending
+  const wordFreq = {};
+  const excludeWords = new Set([...STOP_WORDS,'news','world','report','reports','live','update','updates','latest','breaking','today','day','week','year','first','last','people','us','uk','time','back','two','three','also','more','could','would','trump']);
+  lastHour.forEach(item => {
+    (item.title||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w => w.length > 3 && !excludeWords.has(w)).forEach(w => { wordFreq[w] = (wordFreq[w]||0) + 1; });
+  });
+  const topWords = Object.entries(wordFreq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([w])=>w);
+
+  const lines = [];
+  lines.push(`${lastHour.length} stories in the last hour from ${activeSources.size} sources.`);
+  if(topRegion) lines.push(`Highest activity: ${topRegion[0]} (${topRegion[1]} items).`);
+  if(topSrc) lines.push(`Most active source: ${topSrc[0]} (${topSrc[1]} items).`);
+  if(topWords.length) lines.push(`Key topics: ${topWords.join(', ')}.`);
+  lines.push(`${last6h.length} stories tracked over the last 6 hours.`);
+  lines.push(`${alertItems.length} watchlist alerts active.`);
+
+  DOM.situationSummary.innerHTML = `<div class="situation-summary-title">SITUATION SUMMARY</div>` +
+    lines.map(l => `<div class="situation-summary-line">${l}</div>`).join('');
+}
+
+// ── Render current feeds with time window ──
+function renderCurrentFeeds(){
+  if(!allItems.length) return;
+  const worldFiltered = filterByTimeWindow(allItems);
+  const secFiltered = filterByTimeWindow(securityItems);
+  renderFeedPanel(DOM.feedAll, worldFiltered);
+  renderFeedPanel(DOM.feedSec, secFiltered);
+}
+
 async function loadAllFeeds(){
   feedsLoaded=0;
-  seenTitles.clear();
+  globalSeenTitles.clear();
 
-  // Initialize health dots
   Object.entries(feedConfig).forEach(([key,sources]) => {
     sources.forEach(s => {
       if(feedHealth[s.name] !== 'cached') feedHealth[s.name] = 'loading';
@@ -1002,7 +1310,6 @@ async function loadAllFeeds(){
     renderFeedHealth(key, sources);
   });
 
-  // Fetch all panels concurrently but with per-panel concurrency limit of 4
   const panelResults = {};
   const panelPromises = Object.entries(feedConfig).map(async ([key, sources]) => {
     const results = await asyncPool(6, sources, fetchFeed);
@@ -1010,46 +1317,45 @@ async function loadAllFeeds(){
   });
   await Promise.all(panelPromises);
 
-  // Render results
   allItems = [];
+  securityItems = [];
   for(const [key, results] of Object.entries(panelResults)){
-    const el = key==='world' ? DOM.feedWorld : DOM.feedSec;
-    const updatedEl = key==='world' ? DOM.updatedWorld : DOM.updatedIntel;
-    if(!el) continue;
     let items = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
     items = deduplicateItems(items);
-    items.sort((a,b) => {
-      const timeDiff = new Date(b.pubDate) - new Date(a.pubDate);
-      // Within 30 min window, sort by source priority
-      if(Math.abs(timeDiff) < 30*60*1000){
-        const pa = SOURCE_PRIORITY[a.sourceName] || 99;
-        const pb = SOURCE_PRIORITY[b.sourceName] || 99;
-        if(pa !== pb) return pa - pb;
-      }
-      return timeDiff;
-    });
-    allItems.push(...items);
-    renderFeedPanel(el, items);
-    updatedEl.textContent = timeStamp();
+    items = sortWithPriority(items);
+    if(key === 'world'){
+      allItems.push(...items);
+    } else {
+      securityItems.push(...items);
+      allItems.push(...items); // Also add security to allItems for trending/region/summary
+    }
     renderFeedHealth(key, feedConfig[key]);
   }
-  // Cap total items
   if(allItems.length > MAX_ITEMS) allItems.length = MAX_ITEMS;
+
+  // Render panels with time window filter
+  const worldFiltered = filterByTimeWindow(allItems.filter(i => !SOURCE_COLOR[i.sourceName] || SOURCE_COLOR[i.sourceName] !== 'security'));
+  const secFiltered = filterByTimeWindow(securityItems);
+  renderFeedPanel(DOM.feedAll, filterByTimeWindow(allItems));
+  renderFeedPanel(DOM.feedSec, secFiltered);
+  DOM.updatedMain.textContent = timeStamp();
+
   DOM.sysFeeds.textContent = `FEEDS: ${feedsLoaded}/${totalFeeds}`;
   DOM.sysItems.textContent = `ITEMS: ${allItems.length}`;
   buildTicker();
   detectBreakingNews();
   renderAlerts();
+  updateRegionHeatBar();
+  updateTrendingKeywords();
+  updateSituationSummary();
 }
 
-// ── Search with caching ──
-const searchCache = {}; // {query: {items:[], ts:number}}
+// ── Search ──
+const searchCache = {};
 const SEARCH_CACHE_TTL = 120000;
 
 async function searchFeeds(query){
-  DOM.feedWorld.innerHTML = DOM.feedSec.innerHTML = `<div class="feed-searching">Searching for "${query}"...</div>`;
-
-  // Check search cache for Google News results
+  DOM.feedAll.innerHTML = DOM.feedSec.innerHTML = `<div class="feed-searching">Searching for "${query}"...</div>`;
   let gnItems = [];
   const cacheKey = query.toLowerCase().trim();
   if(searchCache[cacheKey] && Date.now() - searchCache[cacheKey].ts < SEARCH_CACHE_TTL){
@@ -1063,35 +1369,25 @@ async function searchFeeds(query){
       searchCache[cacheKey] = {items: gnItems, ts: Date.now()};
     }catch(e){}
   }
-
   const q=query.toLowerCase();
   const filtered=allItems.filter(i=>(i.title+' '+(i.description||'')+' '+i.sourceName).toLowerCase().includes(q));
   const seen=new Set();
   const deduped=[...gnItems,...filtered].filter(i=>{const k=(i.title||'').toLowerCase().substring(0,50);if(seen.has(k))return false;seen.add(k);return true});
   deduped.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
-  const half=Math.ceil(deduped.length/2);
   if(deduped.length){
-    renderFeedPanel(DOM.feedWorld, deduped.slice(0,half));
-    renderFeedPanel(DOM.feedSec, deduped.slice(half));
+    renderFeedPanel(DOM.feedAll, deduped);
+    DOM.feedSec.innerHTML = '';
   } else {
-    DOM.feedWorld.innerHTML = '<div class="feed-no-results">No results</div>';
+    DOM.feedAll.innerHTML = '<div class="feed-no-results">No results</div>';
     DOM.feedSec.innerHTML = '';
   }
-  DOM.titleWorld.textContent=`Results: "${query}" (1)`;
-  DOM.titleIntel.textContent=`Results: "${query}" (2)`;
+  DOM.titleMain.textContent=`Results: "${query}"`;
   DOM.filterCount.textContent=`${deduped.length} results`;
 }
 
 // ── Stock Ticker (Finnhub) ──
-// Get your free API key at https://finnhub.io/register
 const FINNHUB_KEY = 'd6i9nmpr01ql9cifh08gd6i9nmpr01ql9cifh090';
-
-const STOCK_SYMBOLS = [
-  'SPY','DIA','QQQ','IWM',              // Index ETFs (S&P, Dow, Nasdaq, Russell)
-  'GLD','USO','SLV',                     // Commodity ETFs (Gold, Oil, Silver)
-  'IBIT',                                // Bitcoin ETF
-  'AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA',
-];
+const STOCK_SYMBOLS = ['SPY','DIA','QQQ','IWM','GLD','USO','SLV','IBIT','AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA'];
 const STOCK_LABELS = {
   'SPY':'S&P 500','DIA':'DOW','QQQ':'NASDAQ','IWM':'RUT 2K',
   'GLD':'GOLD','USO':'OIL','SLV':'SILVER','IBIT':'BTC',
@@ -1101,7 +1397,7 @@ let stockData = [];
 
 async function fetchStockPrices(){
   if(!FINNHUB_KEY || FINNHUB_KEY === 'YOUR_KEY_HERE'){
-    DOM.ticker.innerHTML = '<span style="color:var(--red)">MARKETS: Set FINNHUB_KEY in source — free key at <b>finnhub.io/register</b></span>';
+    DOM.ticker.innerHTML = '<span style="color:var(--red)">MARKETS: Set FINNHUB_KEY in source</span>';
     return;
   }
   try {
@@ -1109,20 +1405,12 @@ async function fetchStockPrices(){
       STOCK_SYMBOLS.map(sym =>
         fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${FINNHUB_KEY}`, {signal: AbortSignal.timeout(5000)})
           .then(r => r.json())
-          .then(d => ({
-            symbol: sym,
-            regularMarketPrice: d.c || 0,
-            regularMarketChange: d.d || 0,
-            regularMarketChangePercent: d.dp || 0,
-          }))
+          .then(d => ({symbol:sym, regularMarketPrice:d.c||0, regularMarketChange:d.d||0, regularMarketChangePercent:d.dp||0}))
           .catch(() => null)
       )
     );
     const valid = results.filter(r => r && r.regularMarketPrice > 0);
-    if(valid.length){
-      stockData = valid;
-      renderStockTicker();
-    }
+    if(valid.length){ stockData = valid; renderStockTicker(); }
   } catch(e){ console.warn('Stock fetch error:', e); }
 }
 
@@ -1145,7 +1433,6 @@ function renderStockTicker(){
 }
 
 function buildTicker(){
-  // Render stock data if already loaded, otherwise it'll render when fetchStockPrices completes
   if(stockData.length) renderStockTicker();
 }
 
@@ -1158,6 +1445,8 @@ function executeSearch(){
   DOM.filterTagTerm.textContent=query;
   DOM.filterTag.classList.add('show');
   searchFeeds(query);
+  // Switch to bluesky tab and search there too
+  switchMainTab('bluesky');
   loadBskySearch(query);
   scrollPanels.forEach(el=>scrollPause.set(el,Infinity));
 }
@@ -1167,8 +1456,8 @@ function clearFilter(){
   DOM.filterTag.classList.remove('show');
   DOM.filterCount.textContent='';
   DOM.bskySearchNote.classList.remove('show');
-  DOM.titleWorld.textContent='World News';
-  DOM.titleIntel.textContent='Intel & OSINT';
+  DOM.titleMain.textContent='Primary Feed';
+  switchMainTab('all');
   loadAllFeeds();
   selectBskyAll();
   scrollPanels.forEach(el=>scrollPause.set(el,0));
@@ -1190,22 +1479,23 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='Escape')clearFilter();
 });
 
-// ── Cache invalidation for manual refresh ──
+// ── Cache invalidation ──
 function invalidateCaches(){
   Object.keys(rssCache).forEach(k => delete rssCache[k]);
   Object.keys(bskyCache).forEach(k => delete bskyCache[k]);
   Object.keys(searchCache).forEach(k => delete searchCache[k]);
 }
 
-// ── Init — fire stocks first (visible immediately), then feeds ──
-fetchStockPrices(); // Stocks load fastest, shown in ticker bar
+// ── Init ──
+fetchStockPrices();
 loadAllFeeds();
 
-// RSS refresh every 5 minutes, Bluesky offset by 2.5 minutes
+// RSS refresh every 5 minutes
 setInterval(()=>{
   if(!activeSearch) loadAllFeeds();
 }, 300000);
 
+// Bluesky refresh offset by 2.5 minutes
 setTimeout(() => {
   setInterval(()=>{
     if(!activeSearch){
@@ -1224,22 +1514,14 @@ setInterval(fetchStockPrices, 120000);
   if(!cv) return;
   const ctx = cv.getContext('2d');
   const W = 48, R = 22, CX = 24, CY = 24;
-  // Simplified continent outlines as [lon, lat] polylines (degrees)
   const continents = [
-    // North America
     [[-130,50],[-120,60],[-100,60],[-80,55],[-60,48],[-75,30],[-80,25],[-100,20],[-105,25],[-120,35],[-130,50]],
-    // South America
     [[-80,10],[-60,5],[-35,-5],[-40,-20],[-50,-30],[-70,-50],[-75,-40],[-80,-5],[-80,10]],
-    // Europe
     [[-10,35],[0,40],[5,48],[15,55],[30,60],[40,55],[30,45],[25,38],[10,35],[-10,35]],
-    // Africa
     [[-15,15],[-5,5],[10,-5],[15,-15],[30,-30],[35,-20],[40,0],[50,12],[40,15],[30,30],[10,35],[-5,35],[-15,15]],
-    // Asia
     [[40,55],[60,55],[80,50],[100,55],[120,55],[140,45],[130,35],[120,25],[105,15],[95,10],[80,15],[70,25],[60,30],[40,35],[30,45],[40,55]],
-    // Australia
     [[115,-15],[130,-15],[150,-20],[150,-35],[135,-35],[115,-25],[115,-15]],
   ];
-
   let angle = 0;
   function project(lon, lat, rot){
     const lr = (lon + rot) * Math.PI / 180;
@@ -1247,13 +1529,11 @@ setInterval(fetchStockPrices, 120000);
     const x = Math.cos(la) * Math.sin(lr);
     const y = -Math.sin(la);
     const z = Math.cos(la) * Math.cos(lr);
-    if(z < -0.05) return null; // behind globe
+    if(z < -0.05) return null;
     return [CX + x * R, CY + y * R, z];
   }
-
   function draw(){
     ctx.clearRect(0, 0, W, W);
-    // Globe background
     ctx.beginPath();
     ctx.arc(CX, CY, R, 0, Math.PI * 2);
     ctx.fillStyle = '#050e1a';
@@ -1261,8 +1541,6 @@ setInterval(fetchStockPrices, 120000);
     ctx.strokeStyle = 'rgba(255,215,0,0.15)';
     ctx.lineWidth = 0.8;
     ctx.stroke();
-
-    // Grid lines — latitude
     ctx.strokeStyle = 'rgba(255,215,0,0.2)';
     ctx.lineWidth = 0.4;
     for(let lat = -60; lat <= 60; lat += 30){
@@ -1276,7 +1554,6 @@ setInterval(fetchStockPrices, 120000);
       }
       ctx.stroke();
     }
-    // Grid lines — longitude
     for(let lon = -180; lon < 180; lon += 30){
       ctx.beginPath();
       let started = false;
@@ -1288,8 +1565,6 @@ setInterval(fetchStockPrices, 120000);
       }
       ctx.stroke();
     }
-
-    // Continents
     ctx.strokeStyle = 'rgba(0,220,80,0.8)';
     ctx.fillStyle = 'rgba(0,180,60,0.25)';
     ctx.lineWidth = 0.8;
@@ -1302,13 +1577,9 @@ setInterval(fetchStockPrices, 120000);
         started ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
         started = true;
       });
-      if(allVisible && projected.length > 2){
-        ctx.fill();
-      }
+      if(allVisible && projected.length > 2) ctx.fill();
       ctx.stroke();
     });
-
-    // Equator highlight
     ctx.strokeStyle = 'rgba(255,215,0,0.35)';
     ctx.lineWidth = 0.6;
     ctx.beginPath();
@@ -1320,8 +1591,6 @@ setInterval(fetchStockPrices, 120000);
       started = true;
     }
     ctx.stroke();
-
-    // Glow rim
     const grad = ctx.createRadialGradient(CX, CY, R - 3, CX, CY, R + 1);
     grad.addColorStop(0, 'transparent');
     grad.addColorStop(1, 'rgba(0,255,100,0.08)');
@@ -1329,7 +1598,6 @@ setInterval(fetchStockPrices, 120000);
     ctx.arc(CX, CY, R + 1, 0, Math.PI * 2);
     ctx.fillStyle = grad;
     ctx.fill();
-
     angle += 0.4;
     requestAnimationFrame(draw);
   }
