@@ -1107,7 +1107,7 @@ const MAX_ITEMS = 600;
 const RSS_CACHE_TTL = 180000;
 const rssCache = {};
 
-let allItems = [], securityItems = [], feedsLoaded = 0;
+let allItems = [], worldItems = [], securityItems = [], feedsLoaded = 0;
 const totalFeeds = Object.values(feedConfig).flat().length;
 const feedHealth = {};
 
@@ -1347,11 +1347,9 @@ function updateSituationSummary(){
 
 // ── Render current feeds with time window ──
 function renderCurrentFeeds(){
-  if(!allItems.length) return;
-  const worldFiltered = filterByTimeWindow(allItems);
-  const secFiltered = filterByTimeWindow(securityItems);
-  renderFeedPanel(DOM.feedAll, worldFiltered);
-  renderFeedPanel(DOM.feedSec, secFiltered);
+  if(!worldItems.length && !securityItems.length) return;
+  renderFeedPanel(DOM.feedAll, filterByTimeWindow(worldItems));
+  renderFeedPanel(DOM.feedSec, filterByTimeWindow(securityItems));
 }
 
 async function loadAllFeeds(){
@@ -1372,27 +1370,38 @@ async function loadAllFeeds(){
   });
   await Promise.all(panelPromises);
 
-  allItems = [];
+  worldItems = [];
   securityItems = [];
+  allItems = [];
+
+  // Deduplicate each panel independently (not cross-panel)
   for(const [key, results] of Object.entries(panelResults)){
+    const panelSeen = new Set();
     let items = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
-    items = deduplicateItems(items);
+    // Deduplicate within this panel
+    items = items.filter(item => {
+      const key2 = fingerprint(item.title);
+      if(!key2 || panelSeen.has(key2)) return false;
+      panelSeen.add(key2);
+      return true;
+    });
     items = sortWithPriority(items);
     if(key === 'world'){
-      allItems.push(...items);
+      worldItems.push(...items);
     } else {
       securityItems.push(...items);
-      allItems.push(...items); // Also add security to allItems for trending/region/summary
     }
     renderFeedHealth(key, feedConfig[key]);
   }
+
+  // allItems = combined superset (with cross-dedup) for analytics/trending/alerts
+  globalSeenTitles.clear();
+  allItems = deduplicateItems([...worldItems, ...securityItems]);
   if(allItems.length > MAX_ITEMS) allItems.length = MAX_ITEMS;
 
-  // Render panels with time window filter
-  const worldFiltered = filterByTimeWindow(allItems.filter(i => !SOURCE_COLOR[i.sourceName] || SOURCE_COLOR[i.sourceName] !== 'security'));
-  const secFiltered = filterByTimeWindow(securityItems);
-  renderFeedPanel(DOM.feedAll, filterByTimeWindow(allItems));
-  renderFeedPanel(DOM.feedSec, secFiltered);
+  // Render panels — each shows its OWN feeds, not the combined set
+  renderFeedPanel(DOM.feedAll, filterByTimeWindow(worldItems));
+  renderFeedPanel(DOM.feedSec, filterByTimeWindow(securityItems));
   DOM.updatedMain.textContent = timeStamp();
 
   DOM.sysFeeds.textContent = `FEEDS: ${feedsLoaded}/${totalFeeds}`;
