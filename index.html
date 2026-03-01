@@ -341,11 +341,11 @@ async function fetchXRSS(handle) {
 
 function renderXTweets(items, handle) {
   DOM.xArea.innerHTML = items.map(item => {
-    const text = (item.title || item.description || '').replace(/<[^>]*>/g,'').substring(0,280);
-    const safe = (item.link||`https://x.com/${handle}`).replace(/'/g,"\\'");
+    const text = stripHTML(item.title || item.description || '').substring(0,280);
+    const safe = escapeAttr(item.link||`https://x.com/${handle}`);
     return `<div class="x-tweet" onclick="window.open('${safe}','_blank')">
       <div class="x-tweet-header"><div class="x-tweet-avatar"></div><div class="x-tweet-handle">@${handle}</div><div class="x-tweet-time">${timeAgo(item.pubDate)}</div></div>
-      <div class="x-tweet-text">${text}</div>
+      <div class="x-tweet-text">${escapeAttr(text)}</div>
     </div>`;
   }).join('');
 }
@@ -431,9 +431,14 @@ const feedConfig = {
 let allItems = [], feedsLoaded = 0;
 const totalFeeds = Object.values(feedConfig).flat().length;
 
+// Strip HTML tags and truncate for clean display
+function stripHTML(s){return(s||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim()}
+function escapeAttr(s){return s.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
 function feedItemHTML(item){
-  const safe=(item.link||'').replace(/'/g,"\\'");
-  return`<div class="feed-item" onclick="window.open('${safe}','_blank')"><div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${item.title}</div><div class="feed-item-source">${item.sourceName}</div></div>`;
+  const safe=escapeAttr(item.link||'');
+  const title=stripHTML(item.title).substring(0,200);
+  return`<div class="feed-item" onclick="window.open('${safe}','_blank')"><div class="feed-item-time">${timeAgo(item.pubDate)}</div><div class="feed-item-title">${escapeAttr(title)}</div><div class="feed-item-source">${item.sourceName}</div></div>`;
 }
 
 async function fetchFeed(src){
@@ -494,7 +499,7 @@ async function searchFeeds(query){
 function buildTicker(){
   // allItems already sorted per-panel; just take first 50 by date
   const sorted=[...allItems].sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate)).slice(0,50);
-  DOM.ticker.innerHTML=sorted.map(i=>`<span><span class="ticker-src">${i.sourceName}</span> ${i.title}</span><span class="ticker-sep">&#x25C6;</span>`).join('');
+  DOM.ticker.innerHTML=sorted.map(i=>`<span><span class="ticker-src">${i.sourceName}</span> ${escapeAttr(stripHTML(i.title))}</span><span class="ticker-sep">&#x25C6;</span>`).join('');
 }
 
 // ── Search controller ──
