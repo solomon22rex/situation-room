@@ -14,7 +14,7 @@
     --border:rgba(255,215,0,.25);--border-bright:rgba(255,215,0,.5);
   }
   body{background:var(--bg);color:var(--yellow);font-family:'Times New Roman',Times,Georgia,serif;overflow:hidden;height:100vh;width:100vw;user-select:none}
-  .dashboard{display:grid;grid-template-rows:auto 1fr 36px;height:100vh;gap:0;background:var(--bg-deep)}
+  .dashboard{display:grid;grid-template-rows:auto 1fr 56px;height:100vh;gap:0;background:var(--bg-deep)}
   .header{background:linear-gradient(180deg,#0d2a5c,#081a3a);border-bottom:1px solid var(--border-bright);padding:6px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
   .logo-area{display:flex;align-items:center;gap:14px}
   .logo{font-size:20px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 12px rgba(255,215,0,.4)}
@@ -22,8 +22,17 @@
   .dot-live{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;box-shadow:0 0 5px var(--green)}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
   @keyframes flash-red{0%,100%{background:var(--red);box-shadow:0 0 12px var(--red)}50%{background:#ff6666;box-shadow:0 0 20px var(--red)}}
-  .breaking-indicator{display:none;align-items:center;gap:6px;font-size:11px;color:white;background:var(--red);padding:2px 10px;font-weight:bold;letter-spacing:1px;animation:flash-red 1s infinite;font-family:'Courier New',monospace;cursor:pointer}
+  .breaking-indicator{display:none;align-items:center;gap:6px;font-size:11px;color:white;background:var(--red);padding:2px 10px;font-weight:bold;letter-spacing:1px;animation:flash-red 1s infinite;font-family:'Courier New',monospace;cursor:pointer;position:relative}
   .breaking-indicator.show{display:flex}
+  .breaking-indicator.dismissed{background:rgba(255,215,0,.15);color:var(--yellow-dim);animation:none;border:1px solid var(--border)}
+  .breaking-indicator.dismissed:hover{background:rgba(255,215,0,.25);color:var(--yellow)}
+  .breaking-indicator.dismissed .breaking-popup{display:none}
+  .breaking-popup{display:none;position:absolute;top:100%;left:0;min-width:360px;max-width:480px;background:rgba(10,10,20,.96);border:2px solid var(--red);padding:0;z-index:500;box-shadow:0 8px 32px rgba(255,0,0,.3);max-height:400px;overflow-y:auto}
+  .breaking-indicator.show:hover .breaking-popup{display:block}
+  .breaking-popup-item{padding:8px 12px;border-bottom:1px solid rgba(255,51,51,.2);cursor:pointer}
+  .breaking-popup-item:hover{background:rgba(255,51,51,.12)}
+  .breaking-popup-title{font-size:12px;color:var(--yellow);font-weight:bold;line-height:1.4;letter-spacing:0;animation:none;text-transform:none}
+  .breaking-popup-meta{font-size:9px;color:var(--yellow-dim);margin-top:3px;font-weight:normal;letter-spacing:0;animation:none;text-transform:none}
   .clocks{display:flex;gap:16px;flex-wrap:wrap}
   .clock-item{text-align:center}
   .clock-label{font-size:8px;color:var(--blue-bright);letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif}
@@ -127,17 +136,36 @@
   /* Ticker */
   .ticker-bar{display:flex;align-items:center;background:linear-gradient(180deg,#0d2a5c,#081a3a);border-top:1px solid var(--border-bright);overflow:hidden}
   .ticker-label{flex-shrink:0;padding:0 12px;font-weight:bold;font-size:11px;letter-spacing:2px;background:var(--red);color:white;height:100%;display:flex;align-items:center;font-family:'Courier New',monospace}
-  .ticker-content{flex:1;overflow:hidden;white-space:nowrap;padding-left:8px}
-  .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 220s linear infinite;font-size:13px}
+  .ticker-content{flex:1;overflow:hidden;white-space:nowrap;padding-left:8px;padding-right:64px}
+  .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 120s linear infinite;font-size:14px}
   .ticker-scroll:hover{animation-play-state:paused}
   @keyframes ticker-move{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
   .ticker-src{color:var(--blue-bright);font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
   .ticker-bsky{color:#0085ff;font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
-  .ticker-sep{color:var(--yellow-dim);margin:0 24px}
+  .ticker-sep{color:var(--yellow-dim);margin:0 18px}
+  .stock-sym{font-weight:bold;font-family:'Courier New',monospace;font-size:12px;color:var(--blue-bright);letter-spacing:1px}
+  .stock-price{font-family:'Courier New',monospace;font-size:13px;color:var(--yellow);margin:0 3px}
+  .stock-up{color:var(--green)}
+  .stock-down{color:var(--red)}
+  .stock-flat{color:var(--yellow-dim)}
+  .stock-change{font-family:'Courier New',monospace;font-size:11px;margin-left:2px}
   .kbd-hint{position:fixed;bottom:40px;right:8px;font-size:8px;color:rgba(255,215,0,.25);z-index:10;font-family:Arial;letter-spacing:.5px}
   .resize-handle{position:absolute;bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize;z-index:5}
   .resize-handle::after{content:'';position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-right:2px solid var(--yellow-dim);border-bottom:2px solid var(--yellow-dim);opacity:.4}
   .resize-handle:hover::after{opacity:.8}
+  /* Intel panel tabs */
+  .intel-tabs{display:flex;gap:0;flex-shrink:0;border-bottom:1px solid var(--border)}
+  .intel-tab{flex:1;text-align:center;padding:5px 8px;font-size:11px;font-weight:bold;letter-spacing:1px;cursor:pointer;background:rgba(0,0,0,.3);color:var(--yellow-dim);border-right:1px solid var(--border);font-family:'Courier New',monospace;text-transform:uppercase;transition:background .15s}
+  .intel-tab:last-child{border-right:none}
+  .intel-tab:hover{background:rgba(255,215,0,.08);color:var(--yellow)}
+  .intel-tab.active{background:rgba(255,215,0,.12);color:var(--yellow);border-bottom:2px solid var(--yellow)}
+  .intel-panel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+  .intel-panel.active{display:flex}
+  #win-intel .win-titlebar{background:linear-gradient(90deg,#1a1a5a,#3a2a8a)}
+  /* 3D Globe */
+  .globe-container{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:5}
+  .globe-canvas{border-radius:50%;box-shadow:0 0 10px rgba(0,255,100,.15)}
+  .ticker-bar{position:relative}
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:rgba(255,215,0,.2);border-radius:3px}
@@ -151,7 +179,7 @@
       <div class="logo-area">
         <div class="logo">SITUATION MONITOR</div>
         <div class="status-badge"><div class="dot-live"></div> ALL SYSTEMS ACTIVE</div>
-        <div class="breaking-indicator" id="breaking-indicator" onclick="focusAlerts()">BREAKING</div>
+        <div class="breaking-indicator" id="breaking-indicator" onclick="dismissBreaking()">BREAKING<div class="breaking-popup" id="breaking-popup"></div></div>
       </div>
       <div class="clocks">
         <div class="clock-item"><div class="clock-label">LOS ANGELES</div><div class="clock-time" id="ck-la"></div></div>
@@ -193,19 +221,32 @@
       <div class="win-body" id="feed-world"></div>
       <div class="resize-handle" data-win="win-world"></div>
     </div>
-    <!-- Security & OSINT -->
-    <div class="win" id="win-security">
+    <!-- Intel: Security/OSINT + Bluesky combined -->
+    <div class="win" id="win-intel">
       <div class="win-titlebar">
-        <span class="win-titlebar-text" id="title-security">Security &amp; OSINT</span>
-        <span class="win-updated" id="updated-security"></span>
+        <span class="win-titlebar-text" id="title-intel">Intel &amp; OSINT</span>
+        <span class="win-updated" id="updated-intel"></span>
         <div class="win-btns">
-          <button class="win-btn" onclick="toggleMin('win-security')" title="Minimize">_</button>
-          <button class="win-btn" onclick="toggleMax('win-security')" title="Maximize">&#9633;</button>
+          <button class="win-btn" onclick="toggleMin('win-intel')" title="Minimize">_</button>
+          <button class="win-btn" onclick="toggleMax('win-intel')" title="Maximize">&#9633;</button>
         </div>
       </div>
-      <div class="feed-health" id="health-security"></div>
-      <div class="win-body" id="feed-security"></div>
-      <div class="resize-handle" data-win="win-security"></div>
+      <div class="intel-tabs">
+        <div class="intel-tab active" onclick="switchIntelTab('security')">Security RSS</div>
+        <div class="intel-tab" onclick="switchIntelTab('bluesky')">Bluesky</div>
+      </div>
+      <div class="intel-panel active" id="intel-security">
+        <div class="feed-health" id="health-security"></div>
+        <div class="win-body" id="feed-security"></div>
+      </div>
+      <div class="intel-panel" id="intel-bluesky">
+        <div class="bsky-tabs" id="bsky-tabs"></div>
+        <div class="bsky-search-note" id="bsky-search-note"></div>
+        <div class="bsky-feed" id="bsky-feed">
+          <div class="bsky-loading">Loading Bluesky feeds...</div>
+        </div>
+      </div>
+      <div class="resize-handle" data-win="win-intel"></div>
     </div>
     <!-- Alerts / Watchlist -->
     <div class="win" id="win-alerts">
@@ -244,50 +285,37 @@
       </div>
       <div class="resize-handle" data-win="win-video"></div>
     </div>
-    <!-- Bluesky / OSINT Feeds -->
-    <div class="win" id="win-bsky">
-      <div class="win-titlebar" style="background:linear-gradient(90deg,#003366,#0055aa)">
-        <span class="win-titlebar-text" id="bsky-panel-title">Bluesky / OSINT Feeds</span>
-        <span class="win-updated" id="updated-bsky"></span>
-        <div class="win-btns">
-          <button class="win-btn" onclick="toggleMin('win-bsky')" title="Minimize">_</button>
-          <button class="win-btn" onclick="toggleMax('win-bsky')" title="Maximize">&#9633;</button>
-        </div>
-      </div>
-      <div class="bsky-tabs" id="bsky-tabs"></div>
-      <div class="bsky-search-note" id="bsky-search-note"></div>
-      <div class="bsky-feed" id="bsky-feed">
-        <div class="bsky-loading">Loading Bluesky feeds...</div>
-      </div>
-      <div class="resize-handle" data-win="win-bsky"></div>
-    </div>
   </div>
   <div class="ticker-bar">
-    <div class="ticker-label">BREAKING</div>
+    <div class="ticker-label">MARKETS</div>
     <div class="ticker-content"><div class="ticker-scroll" id="ticker"></div></div>
+    <div class="globe-container">
+      <canvas class="globe-canvas" id="globe-canvas" width="48" height="48"></canvas>
+    </div>
   </div>
 </div>
-<div class="kbd-hint">Drag titlebars &bull; Resize corners &bull; 1-0 channels &bull; R refresh &bull; F fullscreen &bull; / search &bull; ESC clear</div>
+<div class="kbd-hint">Drag titlebars &bull; Resize corners &bull; 1-9 channels &bull; R refresh &bull; F fullscreen &bull; / search &bull; ESC clear</div>
 
 <script>
 // ── Cached DOM refs ──
 const $ = id => document.getElementById(id);
 const DOM = {
   feedWorld: $('feed-world'), feedSec: $('feed-security'),
-  titleWorld: $('title-world'), titleSec: $('title-security'),
+  titleWorld: $('title-world'), titleIntel: $('title-intel'),
   sysFeeds: $('sys-feeds'), sysItems: $('sys-items'), sysUptime: $('sys-uptime'),
   filterInput: $('filter-input'), filterCount: $('filter-count'),
   filterTag: $('filter-tag'), filterTagTerm: $('filter-tag-term'),
   bskyTabs: $('bsky-tabs'), bskyFeed: $('bsky-feed'),
-  bskyTitle: $('bsky-panel-title'), bskySearchNote: $('bsky-search-note'),
+  bskySearchNote: $('bsky-search-note'),
   ticker: $('ticker'), channelsBody: $('channels-body'),
   openWinList: $('open-windows-list'), mainGrid: $('main-grid'),
   healthWorld: $('health-world'), healthSec: $('health-security'),
-  updatedWorld: $('updated-world'), updatedSec: $('updated-security'),
-  updatedBsky: $('updated-bsky'), updatedAlerts: $('updated-alerts'),
+  updatedWorld: $('updated-world'), updatedIntel: $('updated-intel'),
+  updatedAlerts: $('updated-alerts'),
   alertsBody: $('alerts-body'), alertBadge: $('alert-badge'),
   titleAlerts: $('title-alerts'), watchlistBar: $('watchlist-bar'),
   watchlistInput: $('watchlist-input'), breakingIndicator: $('breaking-indicator'),
+  intelSecPanel: $('intel-security'), intelBskyPanel: $('intel-bluesky'),
   clocks: [['ck-la','America/Los_Angeles'],['ck-nyc','America/New_York'],
     ['ck-lon','Europe/London'],['ck-tlv','Asia/Jerusalem'],
     ['ck-mow','Europe/Moscow'],['ck-bjs','Asia/Shanghai'],['ck-tyo','Asia/Tokyo']]
@@ -295,13 +323,12 @@ const DOM = {
 };
 
 // ── Window management: drag, resize, z-index ──
-const winIds = ['win-world','win-security','win-alerts','win-video','win-bsky'];
+const winIds = ['win-world','win-intel','win-alerts','win-video'];
 const defaultLayout = {
-  'win-world':    [0,   0, 17, 100],
-  'win-security': [17,  0, 17, 100],
-  'win-alerts':   [34,  0, 16, 100],
-  'win-video':    [50,  0, 25, 100],
-  'win-bsky':     [75,  0, 25, 100],
+  'win-world':    [0,   0, 18, 100],
+  'win-intel':    [18,  0, 18, 100],
+  'win-alerts':   [36,  0, 34, 100],
+  'win-video':    [70,  0, 30, 100],
 };
 const GAP = 2;
 let topZ = 10;
@@ -332,6 +359,31 @@ function focusAlerts(){
   const el=$('win-alerts');
   el.classList.remove('minimized');
   bringToFront(el);
+}
+function dismissBreaking(){
+  // Reset breaking news to 0 — clear indicator and all breaking clusters
+  DOM.breakingIndicator.classList.remove('show','dismissed');
+  DOM.breakingIndicator.innerHTML = 'BREAKING<div class="breaking-popup" id="breaking-popup"></div>';
+  // Remove breaking clusters from alerts panel
+  document.querySelectorAll('.breaking-cluster').forEach(el => el.remove());
+  // Suppress re-detection for 10 minutes
+  breakingDismissedUntil = Date.now() + 10 * 60 * 1000;
+}
+let breakingDismissedUntil = 0;
+
+// ── Intel panel tab switcher ──
+function switchIntelTab(tab){
+  const tabs = document.querySelectorAll('.intel-tab');
+  const panels = document.querySelectorAll('.intel-panel');
+  tabs.forEach(t => t.classList.remove('active'));
+  panels.forEach(p => p.classList.remove('active'));
+  if(tab === 'security'){
+    tabs[0].classList.add('active');
+    DOM.intelSecPanel.classList.add('active');
+  } else {
+    tabs[1].classList.add('active');
+    DOM.intelBskyPanel.classList.add('active');
+  }
 }
 
 // ── Drag ──
@@ -397,7 +449,7 @@ function toggleMax(id){
 }
 
 // ── Auto-scroll via setInterval (more efficient than rAF for slow updates) ──
-const scrollPanels = [DOM.feedWorld, DOM.feedSec].filter(Boolean);
+const scrollPanels = [DOM.feedWorld].filter(Boolean);
 const scrollPause = new Map();
 scrollPanels.forEach(el => {
   scrollPause.set(el, 0);
@@ -496,6 +548,14 @@ function checkItemAgainstWatchlist(item, type){
 }
 
 function renderAlerts(){
+  // Remove anything older than 24 hours
+  const cutoff = Date.now() - 24*60*60*1000;
+  for(let i = alertItems.length-1; i >= 0; i--){
+    if(new Date(alertItems[i].time).getTime() < cutoff) alertItems.splice(i,1);
+  }
+  // Sort most recent first
+  alertItems.sort((a,b) => new Date(b.time) - new Date(a.time));
+
   if(!alertItems.length){
     DOM.alertsBody.innerHTML = '<div class="alert-empty">Add keywords above to monitor.<br>Matching headlines will appear here with desktop notifications.</div>';
     DOM.alertBadge.style.display = 'none';
@@ -538,6 +598,7 @@ function tokenize(text){
 function detectBreakingNews(){
   const now = Date.now();
   const recentWindow = 30 * 60 * 1000;
+  if(now < breakingDismissedUntil && DOM.breakingIndicator.classList.contains('show')) return;
   const recent = allItems.filter(i => (now - new Date(i.pubDate).getTime()) < recentWindow);
   if(recent.length < 3){ DOM.breakingIndicator.classList.remove('show'); return; }
 
@@ -570,7 +631,16 @@ function detectBreakingNews(){
 
   if(clusters.length > 0){
     DOM.breakingIndicator.classList.add('show');
-    DOM.breakingIndicator.textContent = `BREAKING (${clusters.length})`;
+    // Keep the text + popup inside
+    DOM.breakingIndicator.innerHTML = `BREAKING (${clusters.length})<div class="breaking-popup" id="breaking-popup"></div>`;
+    // Populate hover popup
+    $('breaking-popup').innerHTML = clusters.map(c =>
+      `<div class="breaking-popup-item" onclick="event.stopPropagation();window.open('${escapeAttr(c.items[0].link||'')}','_blank')">
+        <div class="breaking-popup-title">${escapeAttr((c.items[0].title||'').substring(0,150))}</div>
+        <div class="breaking-popup-meta">${c.sources.map(s=>escapeAttr(s)).join(' / ')} — ${c.items.length} sources</div>
+      </div>`
+    ).join('');
+    // Also add clusters to alerts panel
     const clusterHTML = clusters.map(c =>
       `<div class="breaking-cluster">
         <div class="breaking-cluster-title">${escapeAttr(c.items[0].title||'').substring(0,120)}</div>
@@ -591,19 +661,21 @@ function detectBreakingNews(){
 // ── Live channels (expanded) ──
 const channels = [
   {name:'Al Jazeera English',handle:'AlJazeeraEnglish',desc:'24/7 — strongest Middle East coverage',region:'ME'},
-  {name:'France 24',handle:'France24_en',desc:'24/7 — French intl, strong Africa/EU',region:'EU'},
+  {name:'France 24 (FR)',handle:'france24',desc:'24/7 — French language, Africa/EU/ME',region:'EU'},
   {name:'Sky News',handle:'SkyNews',desc:'24/7 — UK-based, fast breaking',region:'UK'},
   {name:'DW News',handle:'DWNews',desc:'24/7 — German intl, Europe/Asia',region:'EU'},
   {name:'euronews',handle:'euronews',desc:'24/7 — Pan-European multi-perspective',region:'EU'},
   {name:'TRT World',handle:'TRTWorld',desc:'24/7 — Turkish state intl',region:'ME'},
   {name:'CNA',handle:'channelnewsasia',desc:'24/7 — Singapore, Asia-Pacific',region:'APAC'},
   {name:'i24NEWS',handle:'i24NEWS_EN',desc:'Israel-based English',region:'ME'},
-  {name:'WION',handle:'WIONews',desc:'India global news, South Asia',region:'APAC'},
-  {name:'NHK World',handle:'NHKWORLD',desc:'Japan, excellent Asia coverage',region:'APAC'},
-  {name:'CNN International',handle:'cnni',desc:'24/7 — US-based global news',region:'US'},
+  {name:'WION',handle:'WION',desc:'24/7 — India, global news',region:'APAC'},
+  {name:'NHK World-Japan',handle:'NHKWORLDJAPAN',desc:'24/7 — Japan, Asia coverage',region:'APAC'},
+  {name:'CNN',handle:'CNN',desc:'24/7 — US-based global news',region:'US'},
+  {name:'Fox News (LiveNOW)',handle:'LiveNOWfromFOX',desc:'24/7 — US breaking news live',region:'US'},
+  {name:'CBS News',handle:'CBSNews',desc:'24/7 — US network news',region:'US'},
   {name:'BBC News',handle:'BBCNews',desc:'24/7 — UK public broadcaster',region:'UK'},
   {name:'NDTV',handle:'ndtv',desc:'24/7 — India, South Asia focus',region:'APAC'},
-  {name:'ABC News AU',handle:'ABCNews',desc:'24/7 — Australian Broadcasting Corp',region:'APAC'},
+  {name:'ABC News AU',handle:'abcnewsaustralia',desc:'24/7 — Australian Broadcasting Corp',region:'APAC'},
 ];
 const openWindows = {};
 function openChannel(i){
@@ -619,23 +691,21 @@ function updateOpenWins(){
 }
 DOM.channelsBody.innerHTML=
   '<div class="channels-hint">Click to open in popup window. Multiple channels can be open simultaneously. Keys 1-0 for quick launch.</div>'+
-  channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i<9?i+1:0}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
+  channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i+1}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
 
 // ── Bluesky OSINT feeds (expanded) ──
 const BSKY_API = 'https://public.api.bsky.app/xrpc/';
 const bskyAccounts = [
   {handle:'wartranslated.bsky.social',label:'WarTranslated'},
   {handle:'eliothiggins.bsky.social',label:'Higgins'},
-  {handle:'osloeconomicsofpeace.bsky.social',label:'Peace Econ'},
   {handle:'reuters.com',label:'Reuters'},
   {handle:'apnews.com',label:'AP'},
   {handle:'theguardian.com',label:'Guardian'},
   {handle:'aljazeera.com',label:'AlJazeera'},
-  {handle:'france24.com',label:'France24'},
   {handle:'washingtonpost.com',label:'WaPo'},
   {handle:'nytimes.com',label:'NYT'},
-  {handle:'bellingcat.com',label:'Bellingcat'},
-  {handle:'bbc.com',label:'BBC'},
+  {handle:'theintercept.com',label:'Intercept'},
+  {handle:'propublica.org',label:'ProPublica'},
   {handle:'ft.com',label:'FT'},
   {handle:'economist.com',label:'Economist'},
   {handle:'foreignaffairs.com',label:'ForeignAff'},
@@ -710,21 +780,19 @@ function renderBskyPosts(posts){
 
 async function loadBskyFeed(handle){
   DOM.bskyFeed.innerHTML=`<div class="bsky-loading">Loading @${handle}...</div>`;
-  DOM.bskyTitle.textContent=`Bluesky / @${handle}`;
   renderBskyPosts(await fetchBskyFeed(handle));
-  DOM.updatedBsky.textContent = timeStamp();
+  DOM.updatedIntel.textContent = timeStamp();
 }
 
 async function loadBskyAll(){
   DOM.bskyFeed.innerHTML='<div class="bsky-loading">Loading all OSINT feeds...</div>';
-  DOM.bskyTitle.textContent='Bluesky / All OSINT Feeds';
   // Use concurrency limiter (4 at a time instead of all 15 at once)
   const results = await asyncPool(4, bskyAccounts, a => fetchBskyFeed(a.handle));
   let allPosts = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
   allPosts.sort((a,b)=>new Date(b.time)-new Date(a.time));
   bskyTickerPosts = allPosts.slice(0,15);
   renderBskyPosts(allPosts.slice(0,80));
-  DOM.updatedBsky.textContent = timeStamp();
+  DOM.updatedIntel.textContent = timeStamp();
   renderAlerts();
 }
 
@@ -732,7 +800,7 @@ async function loadBskySearch(query){
   bskySearchMode=true; renderBskyTabs();
   DOM.bskySearchNote.textContent=`Bluesky search: "${query}"`;
   DOM.bskySearchNote.classList.add('show');
-  DOM.bskyTitle.textContent=`Bluesky / Search: ${query}`;
+  DOM.titleIntel.textContent=`Search: ${query}`;
   DOM.bskyFeed.innerHTML=`<div class="bsky-loading">Searching Bluesky for "${query}"...</div>`;
   try{
     const r=await fetch(`${BSKY_API}app.bsky.feed.searchPosts?q=${encodeURIComponent(query)}&limit=30&sort=latest`,{signal:AbortSignal.timeout(10000)});
@@ -857,7 +925,7 @@ async function fetchFeed(src){
   for(let pi = 0; pi < PROXIES.length; pi++){
     try{
       const proxyUrl = PROXIES[pi](src.url);
-      const r = await fetch(proxyUrl, {signal:AbortSignal.timeout(12000)});
+      const r = await fetch(proxyUrl, {signal:AbortSignal.timeout(8000)});
       if(pi === 0){
         const d = await r.json();
         if(d.status === 'ok' && d.items && d.items.length){
@@ -917,7 +985,7 @@ async function loadAllFeeds(){
   // Fetch all panels concurrently but with per-panel concurrency limit of 4
   const panelResults = {};
   const panelPromises = Object.entries(feedConfig).map(async ([key, sources]) => {
-    const results = await asyncPool(4, sources, fetchFeed);
+    const results = await asyncPool(6, sources, fetchFeed);
     panelResults[key] = results;
   });
   await Promise.all(panelPromises);
@@ -926,7 +994,7 @@ async function loadAllFeeds(){
   allItems = [];
   for(const [key, results] of Object.entries(panelResults)){
     const el = key==='world' ? DOM.feedWorld : DOM.feedSec;
-    const updatedEl = key==='world' ? DOM.updatedWorld : DOM.updatedSec;
+    const updatedEl = key==='world' ? DOM.updatedWorld : DOM.updatedIntel;
     if(!el) continue;
     let items = results.flatMap(r => r.status==='fulfilled' ? r.value : []);
     items = deduplicateItems(items);
@@ -981,24 +1049,78 @@ async function searchFeeds(query){
     DOM.feedSec.innerHTML = '';
   }
   DOM.titleWorld.textContent=`Results: "${query}" (1)`;
-  DOM.titleSec.textContent=`Results: "${query}" (2)`;
+  DOM.titleIntel.textContent=`Results: "${query}" (2)`;
   DOM.filterCount.textContent=`${deduped.length} results`;
 }
 
-function buildTicker(){
-  const sorted=[...allItems].sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate)).slice(0,40);
-  const rssEntries = sorted.map(i => `<span><span class="ticker-src">${escapeAttr(i.sourceName)}</span> ${escapeAttr(stripHTML(i.title))}</span>`);
-  const bskyEntries = bskyTickerPosts.slice(0,10).map(p => `<span><span class="ticker-bsky">@${escapeAttr(p.handle)}</span> ${escapeAttr(p.text.substring(0,120))}</span>`);
-  const merged = [];
-  let bi = 0;
-  for(let i = 0; i < rssEntries.length; i++){
-    merged.push(rssEntries[i]);
-    if((i+1) % 4 === 0 && bi < bskyEntries.length){
-      merged.push(bskyEntries[bi++]);
-    }
+// ── Stock Ticker ──
+const STOCK_SYMBOLS = [
+  '^GSPC','^DJI','^IXIC','^RUT',    // US indices: S&P 500, Dow, Nasdaq, Russell 2000
+  '^VIX',                              // Volatility
+  'GC=F','CL=F','SI=F',               // Gold, Oil, Silver futures
+  'BTC-USD','ETH-USD',                 // Crypto
+  'AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA', // Mega caps
+  'DX-Y.NYB','^TNX',                  // Dollar index, 10Y yield
+];
+const STOCK_LABELS = {
+  '^GSPC':'S&P 500','^DJI':'DOW','^IXIC':'NASDAQ','^RUT':'RUT 2K',
+  '^VIX':'VIX','GC=F':'GOLD','CL=F':'OIL','SI=F':'SILVER',
+  'BTC-USD':'BTC','ETH-USD':'ETH',
+  'AAPL':'AAPL','MSFT':'MSFT','NVDA':'NVDA','GOOGL':'GOOG','AMZN':'AMZN','META':'META','TSLA':'TSLA',
+  'DX-Y.NYB':'DXY','^TNX':'10Y',
+};
+let stockData = [];
+
+async function fetchStockBatch(symbols){
+  const syms = symbols.join(',');
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=symbol,regularMarketPrice,regularMarketChange,regularMarketChangePercent`;
+  // Race all proxies — first valid response wins
+  const proxies = [
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  ];
+  try {
+    return await Promise.any(proxies.map(p =>
+      fetch(p, {signal: AbortSignal.timeout(5000)}).then(async r => {
+        const d = await r.json();
+        if(d.quoteResponse?.result?.length) return d.quoteResponse.result;
+        throw new Error('empty');
+      })
+    ));
+  } catch(e){ return []; }
+}
+
+async function fetchStockPrices(){
+  // All symbols in one batch — faster than splitting
+  const results = await fetchStockBatch(STOCK_SYMBOLS);
+  if(results.length){
+    stockData = results;
+    renderStockTicker();
   }
-  while(bi < bskyEntries.length) merged.push(bskyEntries[bi++]);
-  DOM.ticker.innerHTML = merged.join('<span class="ticker-sep">&#x25C6;</span>');
+}
+
+function renderStockTicker(){
+  if(!stockData.length){
+    DOM.ticker.innerHTML = '<span style="color:var(--yellow-dim)">Loading market data...</span>';
+    return;
+  }
+  const entries = stockData.map(q => {
+    const sym = STOCK_LABELS[q.symbol] || q.symbol;
+    const price = (q.regularMarketPrice||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const chg = q.regularMarketChange||0;
+    const chgPct = q.regularMarketChangePercent||0;
+    const cls = chg > 0 ? 'stock-up' : chg < 0 ? 'stock-down' : 'stock-flat';
+    const arrow = chg > 0 ? '&#9650;' : chg < 0 ? '&#9660;' : '&#9644;';
+    const sign = chg > 0 ? '+' : '';
+    return `<span><span class="stock-sym">${sym}</span> <span class="stock-price">${price}</span><span class="stock-change ${cls}">${arrow} ${sign}${chgPct.toFixed(2)}%</span></span>`;
+  });
+  DOM.ticker.innerHTML = entries.join('<span class="ticker-sep">&#x25C6;</span>');
+}
+
+function buildTicker(){
+  // Render stock data if already loaded, otherwise it'll render when fetchStockPrices completes
+  if(stockData.length) renderStockTicker();
 }
 
 // ── Search controller ──
@@ -1020,7 +1142,7 @@ function clearFilter(){
   DOM.filterCount.textContent='';
   DOM.bskySearchNote.classList.remove('show');
   DOM.titleWorld.textContent='World News';
-  DOM.titleSec.textContent='Security & OSINT';
+  DOM.titleIntel.textContent='Intel & OSINT';
   loadAllFeeds();
   selectBskyAll();
   scrollPanels.forEach(el=>scrollPause.set(el,0));
@@ -1049,10 +1171,11 @@ function invalidateCaches(){
   Object.keys(searchCache).forEach(k => delete searchCache[k]);
 }
 
-// ── Init + staggered auto-refresh ──
+// ── Init — fire stocks first (visible immediately), then feeds ──
+fetchStockPrices(); // Stocks load fastest, shown in ticker bar
 loadAllFeeds();
 
-// RSS refresh every 5 minutes, Bluesky offset by 2.5 minutes to avoid simultaneous load
+// RSS refresh every 5 minutes, Bluesky offset by 2.5 minutes
 setInterval(()=>{
   if(!activeSearch) loadAllFeeds();
 }, 300000);
@@ -1064,7 +1187,128 @@ setTimeout(() => {
       loadBskyAll();
     }
   }, 300000);
-}, 150000); // Offset Bluesky refresh by 2.5 minutes
+}, 150000);
+
+// Stock prices refresh every 2 minutes
+setInterval(fetchStockPrices, 120000);
+
+// ── 90s CGI Globe ──
+(function(){
+  const cv = $('globe-canvas');
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = 48, R = 22, CX = 24, CY = 24;
+  // Simplified continent outlines as [lon, lat] polylines (degrees)
+  const continents = [
+    // North America
+    [[-130,50],[-120,60],[-100,60],[-80,55],[-60,48],[-75,30],[-80,25],[-100,20],[-105,25],[-120,35],[-130,50]],
+    // South America
+    [[-80,10],[-60,5],[-35,-5],[-40,-20],[-50,-30],[-70,-50],[-75,-40],[-80,-5],[-80,10]],
+    // Europe
+    [[-10,35],[0,40],[5,48],[15,55],[30,60],[40,55],[30,45],[25,38],[10,35],[-10,35]],
+    // Africa
+    [[-15,15],[-5,5],[10,-5],[15,-15],[30,-30],[35,-20],[40,0],[50,12],[40,15],[30,30],[10,35],[-5,35],[-15,15]],
+    // Asia
+    [[40,55],[60,55],[80,50],[100,55],[120,55],[140,45],[130,35],[120,25],[105,15],[95,10],[80,15],[70,25],[60,30],[40,35],[30,45],[40,55]],
+    // Australia
+    [[115,-15],[130,-15],[150,-20],[150,-35],[135,-35],[115,-25],[115,-15]],
+  ];
+
+  let angle = 0;
+  function project(lon, lat, rot){
+    const lr = (lon + rot) * Math.PI / 180;
+    const la = lat * Math.PI / 180;
+    const x = Math.cos(la) * Math.sin(lr);
+    const y = -Math.sin(la);
+    const z = Math.cos(la) * Math.cos(lr);
+    if(z < -0.05) return null; // behind globe
+    return [CX + x * R, CY + y * R, z];
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, W);
+    // Globe background
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.fillStyle = '#050e1a';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,215,0,0.15)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Grid lines — latitude
+    ctx.strokeStyle = 'rgba(255,215,0,0.2)';
+    ctx.lineWidth = 0.4;
+    for(let lat = -60; lat <= 60; lat += 30){
+      ctx.beginPath();
+      let started = false;
+      for(let lon = -180; lon <= 180; lon += 5){
+        const p = project(lon, lat, angle);
+        if(!p){ started = false; continue; }
+        started ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+        started = true;
+      }
+      ctx.stroke();
+    }
+    // Grid lines — longitude
+    for(let lon = -180; lon < 180; lon += 30){
+      ctx.beginPath();
+      let started = false;
+      for(let lat = -90; lat <= 90; lat += 5){
+        const p = project(lon, lat, angle);
+        if(!p){ started = false; continue; }
+        started ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+        started = true;
+      }
+      ctx.stroke();
+    }
+
+    // Continents
+    ctx.strokeStyle = 'rgba(0,220,80,0.8)';
+    ctx.fillStyle = 'rgba(0,180,60,0.25)';
+    ctx.lineWidth = 0.8;
+    continents.forEach(pts => {
+      ctx.beginPath();
+      let started = false, allVisible = true;
+      const projected = pts.map(([lo,la]) => project(lo, la, angle));
+      projected.forEach(p => {
+        if(!p){ allVisible = false; started = false; return; }
+        started ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+        started = true;
+      });
+      if(allVisible && projected.length > 2){
+        ctx.fill();
+      }
+      ctx.stroke();
+    });
+
+    // Equator highlight
+    ctx.strokeStyle = 'rgba(255,215,0,0.35)';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    let started = false;
+    for(let lon = -180; lon <= 180; lon += 3){
+      const p = project(lon, 0, angle);
+      if(!p){ started = false; continue; }
+      started ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+      started = true;
+    }
+    ctx.stroke();
+
+    // Glow rim
+    const grad = ctx.createRadialGradient(CX, CY, R - 3, CX, CY, R + 1);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(1, 'rgba(0,255,100,0.08)');
+    ctx.beginPath();
+    ctx.arc(CX, CY, R + 1, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    angle += 0.4;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
 </script>
 </body>
 </html>
