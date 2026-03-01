@@ -1053,51 +1053,48 @@ async function searchFeeds(query){
   DOM.filterCount.textContent=`${deduped.length} results`;
 }
 
-// ── Stock Ticker ──
+// ── Stock Ticker (Finnhub) ──
+// Get your free API key at https://finnhub.io/register
+const FINNHUB_KEY = 'd6i9nmpr01ql9cifh08gd6i9nmpr01ql9cifh090';
+
 const STOCK_SYMBOLS = [
-  '^GSPC','^DJI','^IXIC','^RUT',    // US indices: S&P 500, Dow, Nasdaq, Russell 2000
-  '^VIX',                              // Volatility
-  'GC=F','CL=F','SI=F',               // Gold, Oil, Silver futures
-  'BTC-USD','ETH-USD',                 // Crypto
-  'AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA', // Mega caps
-  'DX-Y.NYB','^TNX',                  // Dollar index, 10Y yield
+  'SPY','DIA','QQQ','IWM',              // Index ETFs (S&P, Dow, Nasdaq, Russell)
+  'GLD','USO','SLV',                     // Commodity ETFs (Gold, Oil, Silver)
+  'IBIT',                                // Bitcoin ETF
+  'AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA',
 ];
 const STOCK_LABELS = {
-  '^GSPC':'S&P 500','^DJI':'DOW','^IXIC':'NASDAQ','^RUT':'RUT 2K',
-  '^VIX':'VIX','GC=F':'GOLD','CL=F':'OIL','SI=F':'SILVER',
-  'BTC-USD':'BTC','ETH-USD':'ETH',
+  'SPY':'S&P 500','DIA':'DOW','QQQ':'NASDAQ','IWM':'RUT 2K',
+  'GLD':'GOLD','USO':'OIL','SLV':'SILVER','IBIT':'BTC',
   'AAPL':'AAPL','MSFT':'MSFT','NVDA':'NVDA','GOOGL':'GOOG','AMZN':'AMZN','META':'META','TSLA':'TSLA',
-  'DX-Y.NYB':'DXY','^TNX':'10Y',
 };
 let stockData = [];
 
-async function fetchStockBatch(symbols){
-  const syms = symbols.join(',');
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=symbol,regularMarketPrice,regularMarketChange,regularMarketChangePercent`;
-  // Race all proxies — first valid response wins
-  const proxies = [
-    `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-  ];
-  try {
-    return await Promise.any(proxies.map(p =>
-      fetch(p, {signal: AbortSignal.timeout(5000)}).then(async r => {
-        const d = await r.json();
-        if(d.quoteResponse?.result?.length) return d.quoteResponse.result;
-        throw new Error('empty');
-      })
-    ));
-  } catch(e){ return []; }
-}
-
 async function fetchStockPrices(){
-  // All symbols in one batch — faster than splitting
-  const results = await fetchStockBatch(STOCK_SYMBOLS);
-  if(results.length){
-    stockData = results;
-    renderStockTicker();
+  if(!FINNHUB_KEY || FINNHUB_KEY === 'YOUR_KEY_HERE'){
+    DOM.ticker.innerHTML = '<span style="color:var(--red)">MARKETS: Set FINNHUB_KEY in source — free key at <b>finnhub.io/register</b></span>';
+    return;
   }
+  try {
+    const results = await Promise.all(
+      STOCK_SYMBOLS.map(sym =>
+        fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${FINNHUB_KEY}`, {signal: AbortSignal.timeout(5000)})
+          .then(r => r.json())
+          .then(d => ({
+            symbol: sym,
+            regularMarketPrice: d.c || 0,
+            regularMarketChange: d.d || 0,
+            regularMarketChangePercent: d.dp || 0,
+          }))
+          .catch(() => null)
+      )
+    );
+    const valid = results.filter(r => r && r.regularMarketPrice > 0);
+    if(valid.length){
+      stockData = valid;
+      renderStockTicker();
+    }
+  } catch(e){ console.warn('Stock fetch error:', e); }
 }
 
 function renderStockTicker(){
