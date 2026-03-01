@@ -22,8 +22,14 @@
   .dot-live{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;box-shadow:0 0 5px var(--green)}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
   @keyframes flash-red{0%,100%{background:var(--red);box-shadow:0 0 12px var(--red)}50%{background:#ff6666;box-shadow:0 0 20px var(--red)}}
-  .breaking-indicator{display:none;align-items:center;gap:6px;font-size:11px;color:white;background:var(--red);padding:2px 10px;font-weight:bold;letter-spacing:1px;animation:flash-red 1s infinite;font-family:'Courier New',monospace;cursor:pointer}
+  .breaking-indicator{display:none;align-items:center;gap:6px;font-size:11px;color:white;background:var(--red);padding:2px 10px;font-weight:bold;letter-spacing:1px;animation:flash-red 1s infinite;font-family:'Courier New',monospace;cursor:pointer;position:relative}
   .breaking-indicator.show{display:flex}
+  .breaking-popup{display:none;position:absolute;top:100%;left:0;min-width:360px;max-width:480px;background:rgba(10,10,20,.96);border:2px solid var(--red);padding:0;z-index:500;box-shadow:0 8px 32px rgba(255,0,0,.3);max-height:400px;overflow-y:auto}
+  .breaking-indicator.show:hover .breaking-popup{display:block}
+  .breaking-popup-item{padding:8px 12px;border-bottom:1px solid rgba(255,51,51,.2);cursor:pointer}
+  .breaking-popup-item:hover{background:rgba(255,51,51,.12)}
+  .breaking-popup-title{font-size:12px;color:var(--yellow);font-weight:bold;line-height:1.4;letter-spacing:0;animation:none;text-transform:none}
+  .breaking-popup-meta{font-size:9px;color:var(--yellow-dim);margin-top:3px;font-weight:normal;letter-spacing:0;animation:none;text-transform:none}
   .clocks{display:flex;gap:16px;flex-wrap:wrap}
   .clock-item{text-align:center}
   .clock-label{font-size:8px;color:var(--blue-bright);letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif}
@@ -151,7 +157,7 @@
       <div class="logo-area">
         <div class="logo">SITUATION MONITOR</div>
         <div class="status-badge"><div class="dot-live"></div> ALL SYSTEMS ACTIVE</div>
-        <div class="breaking-indicator" id="breaking-indicator" onclick="focusAlerts()">BREAKING</div>
+        <div class="breaking-indicator" id="breaking-indicator" onclick="focusAlerts()">BREAKING<div class="breaking-popup" id="breaking-popup"></div></div>
       </div>
       <div class="clocks">
         <div class="clock-item"><div class="clock-label">LOS ANGELES</div><div class="clock-time" id="ck-la"></div></div>
@@ -496,6 +502,14 @@ function checkItemAgainstWatchlist(item, type){
 }
 
 function renderAlerts(){
+  // Remove anything older than 24 hours
+  const cutoff = Date.now() - 24*60*60*1000;
+  for(let i = alertItems.length-1; i >= 0; i--){
+    if(new Date(alertItems[i].time).getTime() < cutoff) alertItems.splice(i,1);
+  }
+  // Sort most recent first
+  alertItems.sort((a,b) => new Date(b.time) - new Date(a.time));
+
   if(!alertItems.length){
     DOM.alertsBody.innerHTML = '<div class="alert-empty">Add keywords above to monitor.<br>Matching headlines will appear here with desktop notifications.</div>';
     DOM.alertBadge.style.display = 'none';
@@ -570,7 +584,16 @@ function detectBreakingNews(){
 
   if(clusters.length > 0){
     DOM.breakingIndicator.classList.add('show');
-    DOM.breakingIndicator.textContent = `BREAKING (${clusters.length})`;
+    // Keep the text + popup inside
+    DOM.breakingIndicator.innerHTML = `BREAKING (${clusters.length})<div class="breaking-popup" id="breaking-popup"></div>`;
+    // Populate hover popup
+    $('breaking-popup').innerHTML = clusters.map(c =>
+      `<div class="breaking-popup-item" onclick="event.stopPropagation();window.open('${escapeAttr(c.items[0].link||'')}','_blank')">
+        <div class="breaking-popup-title">${escapeAttr((c.items[0].title||'').substring(0,150))}</div>
+        <div class="breaking-popup-meta">${c.sources.map(s=>escapeAttr(s)).join(' / ')} — ${c.items.length} sources</div>
+      </div>`
+    ).join('');
+    // Also add clusters to alerts panel
     const clusterHTML = clusters.map(c =>
       `<div class="breaking-cluster">
         <div class="breaking-cluster-title">${escapeAttr(c.items[0].title||'').substring(0,120)}</div>
@@ -598,10 +621,14 @@ const channels = [
   {name:'TRT World',handle:'TRTWorld',desc:'24/7 — Turkish state intl',region:'ME'},
   {name:'CNA',handle:'channelnewsasia',desc:'24/7 — Singapore, Asia-Pacific',region:'APAC'},
   {name:'i24NEWS',handle:'i24NEWS_EN',desc:'Israel-based English',region:'ME'},
+  {name:'WION',handle:'WION',desc:'24/7 — India, global news',region:'APAC'},
+  {name:'NHK World-Japan',handle:'NHKWORLDJAPAN',desc:'24/7 — Japan, Asia coverage',region:'APAC'},
+  {name:'CNN',handle:'CNN',desc:'24/7 — US-based global news',region:'US'},
   {name:'Fox News (LiveNOW)',handle:'LiveNOWfromFOX',desc:'24/7 — US breaking news live',region:'US'},
   {name:'CBS News',handle:'CBSNews',desc:'24/7 — US network news',region:'US'},
   {name:'BBC News',handle:'BBCNews',desc:'24/7 — UK public broadcaster',region:'UK'},
   {name:'NDTV',handle:'ndtv',desc:'24/7 — India, South Asia focus',region:'APAC'},
+  {name:'ABC News AU',handle:'abcnewsaustralia',desc:'24/7 — Australian Broadcasting Corp',region:'APAC'},
 ];
 const openWindows = {};
 function openChannel(i){
