@@ -136,8 +136,10 @@
   /* Ticker */
   .ticker-bar{display:flex;align-items:center;background:linear-gradient(180deg,#0d2a5c,#081a3a);border-top:1px solid var(--border-bright);overflow:hidden}
   .ticker-label{flex-shrink:0;padding:0 12px;font-weight:bold;font-size:11px;letter-spacing:2px;background:var(--red);color:white;height:100%;display:flex;align-items:center;font-family:'Courier New',monospace}
-  .ticker-content{flex:1;overflow:hidden;white-space:nowrap;padding-left:8px;padding-right:64px}
-  .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 120s linear infinite;font-size:14px}
+  .ticker-content{flex:1;overflow:hidden;overflow-x:auto;white-space:nowrap;padding-left:8px;padding-right:64px;scroll-behavior:smooth}
+  .ticker-content::-webkit-scrollbar{height:4px}
+  .ticker-content::-webkit-scrollbar-thumb{background:rgba(255,215,0,.3);border-radius:2px}
+  .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 60s linear infinite;font-size:14px}
   .ticker-scroll:hover{animation-play-state:paused}
   @keyframes ticker-move{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
   .ticker-src{color:var(--blue-bright);font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
