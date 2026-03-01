@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SITUATION ROOM // OSINT DASHBOARD</title>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   :root{
@@ -39,7 +38,7 @@
   .main-content{display:grid;grid-template-columns:1fr 1fr 1.6fr 1.4fr;gap:2px;overflow:hidden;min-height:0}
   .win{background:var(--blue-panel);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;transition:all .3s;position:relative}
   .win.minimized{flex:0 0 auto!important;max-height:28px!important;overflow:hidden}
-  .win.minimized .win-body,.win.minimized .channels-body,.win.minimized .open-windows-bar,.win.minimized .x-embed-area,.win.minimized .x-tabs{display:none}
+  .win.minimized .win-body,.win.minimized .channels-body,.win.minimized .open-windows-bar,.win.minimized .bsky-feed,.win.minimized .bsky-tabs{display:none}
   .win.maximized{position:fixed!important;top:0;left:0;right:0;bottom:0;z-index:100;max-height:none!important}
   .win-titlebar{background:linear-gradient(90deg,#1a3a7a,#2a5aaa);padding:4px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border)}
   .win-titlebar-text{font-size:12px;font-weight:bold;color:var(--yellow);letter-spacing:.5px}
@@ -71,29 +70,23 @@
   .open-windows-list{display:flex;flex-wrap:wrap;gap:3px}
   .open-win-tag{font-size:9px;background:rgba(255,51,51,.15);border:1px solid rgba(255,51,51,.3);color:var(--yellow);padding:2px 6px;display:flex;align-items:center;gap:4px;cursor:pointer}
   .open-win-tag .dot{width:4px;height:4px;border-radius:50%;background:var(--red);animation:pulse 1s infinite}
-  .x-tabs{display:flex;flex-wrap:wrap;gap:2px;padding:3px 4px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);flex-shrink:0}
-  .x-tab{background:var(--blue-dark);border:1px solid var(--border);color:var(--yellow-dim);font-size:9px;font-family:'Times New Roman',serif;font-weight:bold;padding:2px 6px;cursor:pointer;white-space:nowrap}
-  .x-tab:hover{color:var(--yellow);border-color:var(--yellow)}
-  .x-tab.active{background:rgba(255,215,0,.12);color:var(--yellow);border-color:var(--yellow)}
-  .x-embed-area{flex:1;overflow-y:auto;min-height:0;background:#000;position:relative}
-  .x-embed-area iframe{width:100%;height:100%;border:none}
-  .x-loading{padding:20px;text-align:center;color:var(--yellow-dim);font-style:italic;font-size:11px}
-  .x-fallback-cards{padding:6px;display:flex;flex-direction:column;gap:4px}
-  .x-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,0,0,.25);border:1px solid var(--border);cursor:pointer;transition:all .2s}
-  .x-card:hover{background:rgba(255,215,0,.08);border-color:var(--yellow);transform:translateX(2px)}
-  .x-card-handle{font-size:14px;font-weight:bold;color:var(--yellow)}
-  .x-card-label{font-size:10px;color:var(--yellow-dim)}
-  .x-card-dot{width:8px;height:8px;border-radius:50%;background:#1da1f2;flex-shrink:0}
-  .x-fallback-msg{font-size:10px;color:var(--yellow-dim);padding:8px 12px;line-height:1.5;text-align:center}
-  .x-search-note{padding:8px;font-size:10px;color:var(--blue-bright);background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);text-align:center;font-family:Arial,sans-serif;flex-shrink:0;display:none}
-  .x-search-note.show{display:block}
-  .x-tweet{padding:8px 10px;border-bottom:1px solid rgba(29,161,242,.15);cursor:pointer;transition:background .15s}
-  .x-tweet:hover{background:rgba(29,161,242,.08)}
-  .x-tweet-header{display:flex;align-items:center;gap:6px;margin-bottom:4px}
-  .x-tweet-avatar{width:6px;height:6px;border-radius:50%;background:#1da1f2;flex-shrink:0}
-  .x-tweet-handle{font-size:10px;color:#1da1f2;font-weight:bold}
-  .x-tweet-time{font-size:9px;color:var(--yellow-dim);font-family:'Courier New',monospace;margin-left:auto}
-  .x-tweet-text{font-size:12px;line-height:1.4;color:var(--yellow)}
+  .bsky-tabs{display:flex;flex-wrap:wrap;gap:2px;padding:3px 4px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);flex-shrink:0}
+  .bsky-tab{background:var(--blue-dark);border:1px solid var(--border);color:var(--yellow-dim);font-size:9px;font-family:'Times New Roman',serif;font-weight:bold;padding:2px 6px;cursor:pointer;white-space:nowrap}
+  .bsky-tab:hover{color:var(--yellow);border-color:var(--yellow)}
+  .bsky-tab.active{background:rgba(255,215,0,.12);color:var(--yellow);border-color:var(--yellow)}
+  .bsky-feed{flex:1;overflow-y:auto;min-height:0;background:rgba(0,0,0,.4);position:relative}
+  .bsky-loading{padding:20px;text-align:center;color:var(--yellow-dim);font-style:italic;font-size:11px}
+  .bsky-post{padding:8px 10px;border-bottom:1px solid rgba(0,186,255,.12);cursor:pointer;transition:background .15s}
+  .bsky-post:hover{background:rgba(0,186,255,.07)}
+  .bsky-post-header{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+  .bsky-post-dot{width:6px;height:6px;border-radius:50%;background:#0085ff;flex-shrink:0}
+  .bsky-post-handle{font-size:10px;color:#0085ff;font-weight:bold}
+  .bsky-post-time{font-size:9px;color:var(--yellow-dim);font-family:'Courier New',monospace;margin-left:auto}
+  .bsky-post-text{font-size:12px;line-height:1.4;color:var(--yellow)}
+  .bsky-post-embed{font-size:10px;color:var(--blue-bright);margin-top:4px;font-style:italic}
+  .bsky-search-note{padding:8px;font-size:10px;color:var(--blue-bright);background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);text-align:center;font-family:Arial,sans-serif;flex-shrink:0;display:none}
+  .bsky-search-note.show{display:block}
+  .bsky-all-tab{background:rgba(0,133,255,.15);border-color:rgba(0,133,255,.4)}
   .ticker-bar{display:flex;align-items:center;background:linear-gradient(180deg,#0d2a5c,#081a3a);border-top:1px solid var(--border-bright);overflow:hidden}
   .ticker-label{flex-shrink:0;padding:0 12px;font-weight:bold;font-size:11px;letter-spacing:2px;background:var(--red);color:white;height:100%;display:flex;align-items:center;font-family:'Courier New',monospace}
   .ticker-content{flex:1;overflow:hidden;white-space:nowrap;padding-left:8px}
@@ -128,14 +121,14 @@
         <div class="clock-item"><div class="clock-label">TOKYO</div><div class="clock-time" id="ck-tyo"></div></div>
       </div>
       <div class="sys-stats">
-        <span id="sys-feeds">FEEDS: 0/20</span>
+        <span id="sys-feeds">FEEDS: 0/29</span>
         <span id="sys-items">ITEMS: 0</span>
         <span id="sys-uptime">UP 00:00:00</span>
       </div>
     </div>
     <div class="filter-bar">
       <label>SEARCH:</label>
-      <input class="filter-input" id="filter-input" type="text" placeholder="Type topic + Enter to search all feeds & X (e.g. iran, nuclear, ukraine)">
+      <input class="filter-input" id="filter-input" type="text" placeholder="Type topic + Enter to search all feeds & Bluesky (e.g. iran, nuclear, ukraine)">
       <button class="filter-btn" onclick="executeSearch()">SEARCH</button>
       <span class="filter-count" id="filter-count"></span>
       <span class="filter-active-tag" id="filter-tag">Searching: <b id="filter-tag-term"></b> <span style="cursor:pointer;margin-left:4px" onclick="clearFilter()">&#10005;</span></span>
@@ -179,18 +172,18 @@
         </div>
       </div>
     </div>
-    <div class="win" id="win-x">
-      <div class="win-titlebar">
-        <span class="win-titlebar-text" id="x-panel-title">X / Live Posts</span>
+    <div class="win" id="win-bsky">
+      <div class="win-titlebar" style="background:linear-gradient(90deg,#003366,#0055aa)">
+        <span class="win-titlebar-text" id="bsky-panel-title">Bluesky / OSINT Feeds</span>
         <div class="win-btns">
-          <button class="win-btn" onclick="toggleMin('win-x')" title="Minimize">_</button>
-          <button class="win-btn" onclick="toggleMax('win-x')" title="Maximize">&#9633;</button>
+          <button class="win-btn" onclick="toggleMin('win-bsky')" title="Minimize">_</button>
+          <button class="win-btn" onclick="toggleMax('win-bsky')" title="Maximize">&#9633;</button>
         </div>
       </div>
-      <div class="x-tabs" id="x-tabs"></div>
-      <div class="x-search-note" id="x-search-note"></div>
-      <div class="x-embed-area" id="x-embed-area">
-        <div class="x-loading">Loading X feeds...</div>
+      <div class="bsky-tabs" id="bsky-tabs"></div>
+      <div class="bsky-search-note" id="bsky-search-note"></div>
+      <div class="bsky-feed" id="bsky-feed">
+        <div class="bsky-loading">Loading Bluesky feeds...</div>
       </div>
     </div>
   </div>
@@ -210,8 +203,8 @@ const DOM = {
   sysFeeds: $('sys-feeds'), sysItems: $('sys-items'), sysUptime: $('sys-uptime'),
   filterInput: $('filter-input'), filterCount: $('filter-count'),
   filterTag: $('filter-tag'), filterTagTerm: $('filter-tag-term'),
-  xTabs: $('x-tabs'), xArea: $('x-embed-area'),
-  xTitle: $('x-panel-title'), xSearchNote: $('x-search-note'),
+  bskyTabs: $('bsky-tabs'), bskyFeed: $('bsky-feed'),
+  bskyTitle: $('bsky-panel-title'), bskySearchNote: $('bsky-search-note'),
   ticker: $('ticker'), channelsBody: $('channels-body'),
   openWinList: $('open-windows-list'),
   clocks: [['ck-la','America/Los_Angeles'],['ck-nyc','America/New_York'],
@@ -286,156 +279,137 @@ DOM.channelsBody.innerHTML=
   '<div class="channels-hint">Click to open in popup window. Multiple channels can be open simultaneously. Keys 1-0 for quick launch.</div>'+
   channels.map((c,i)=>`<div class="ch-card" onclick="openChannel(${i})"><div class="ch-num">${i<9?i+1:0}</div><div class="ch-live-dot"></div><div class="ch-info"><div class="ch-name">${c.name}</div><div class="ch-desc">${c.desc}</div></div><div class="ch-key">${c.region}</div></div>`).join('');
 
-// ── X / Twitter panel — RSS + iframe + card fallback ──
-const xAccounts = [
-  {handle:'OSINTdefender',label:'OSINT Def'},
-  {handle:'sentdefender',label:'Sentinel'},
-  {handle:'IntelCrab',label:'IntelCrab'},
-  {handle:'OSINTtechnical',label:'OSINTtech'},
-  {handle:'Faytuks',label:'Faytuks'},
-  {handle:'Charles_Lister',label:'C.Lister'},
-  {handle:'RALee85',label:'R.Lee'},
-  {handle:'Jason_R_Brodsky',label:'Brodsky'},
-  {handle:'MiddleEastEye',label:'MEE'},
+// ── Bluesky OSINT feeds — public API, no auth needed ──
+const BSKY_API = 'https://public.api.bsky.app/xrpc/';
+const bskyAccounts = [
+  {handle:'sentdefender.bsky.social',label:'Sentinel'},
+  {handle:'osinttechnical.bsky.social',label:'OSINTtech'},
+  {handle:'intelcrab.bsky.social',label:'IntelCrab'},
+  {handle:'faytuks.bsky.social',label:'Faytuks'},
+  {handle:'ralee85.bsky.social',label:'R.Lee'},
+  {handle:'bellingcat.com',label:'Bellingcat'},
+  {handle:'liveuamap.com',label:'Liveuamap'},
+  {handle:'archer83able.bsky.social',label:'Status-6'},
+  {handle:'auroraintel.bsky.social',label:'AuroraIntel'},
 ];
-let currentXTab = 0, xSearchMode = false;
-const xCache = {}; // Cache fetched X RSS data per handle
+let currentBskyTab = -1, bskySearchMode = false;
+const bskyCache = {};
 
 const PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
-// Multiple Nitter/RSS bridge instances to try (in order)
-const X_RSS_BRIDGES = [
-  handle => `https://rsshub.app/twitter/user/${handle}`,
-  handle => `https://nitter.privacydev.net/${handle}/rss`,
-  handle => `https://nitter.poast.org/${handle}/rss`,
-];
-
-function renderXTabs(){
-  DOM.xTabs.innerHTML = xAccounts.map((a,i)=>
-    `<button class="x-tab ${!xSearchMode&&i===currentXTab?'active':''}" onclick="selectXAccount(${i})">${a.label}</button>`
-  ).join('');
-}
-
-function selectXAccount(i){
-  currentXTab=i; xSearchMode=false;
-  DOM.xSearchNote.classList.remove('show');
-  renderXTabs();
-  loadXFeed(xAccounts[i].handle);
-}
-
 function timeAgo(d){const m=Math.floor((Date.now()-new Date(d).getTime())/60000);if(m<1)return'NOW';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return(h/24|0)+'d'}
 
-// Primary: fetch tweets as RSS via bridge services
-async function fetchXRSS(handle) {
-  if (xCache[handle]) return xCache[handle];
-  for (const bridge of X_RSS_BRIDGES) {
-    try {
-      const url = bridge(handle);
-      const r = await fetch(PROXY + encodeURIComponent(url), {signal: AbortSignal.timeout(8000)});
-      const d = await r.json();
-      if (d.status === 'ok' && d.items && d.items.length > 0) {
-        xCache[handle] = d.items;
-        return d.items;
-      }
-    } catch(e) { /* try next bridge */ }
-  }
-  return null; // All bridges failed
+function renderBskyTabs(){
+  const allActive = !bskySearchMode && currentBskyTab === -1;
+  DOM.bskyTabs.innerHTML =
+    `<button class="bsky-tab bsky-all-tab ${allActive?'active':''}" onclick="selectBskyAll()">ALL</button>`+
+    bskyAccounts.map((a,i)=>
+      `<button class="bsky-tab ${!bskySearchMode&&i===currentBskyTab?'active':''}" onclick="selectBskyAccount(${i})">${a.label}</button>`
+    ).join('');
 }
 
-function renderXTweets(items, handle) {
-  DOM.xArea.innerHTML = items.map(item => {
-    const text = stripHTML(item.title || item.description || '').substring(0,280);
-    const safe = escapeAttr(item.link||`https://x.com/${handle}`);
-    return `<div class="x-tweet" onclick="window.open('${safe}','_blank')">
-      <div class="x-tweet-header"><div class="x-tweet-avatar"></div><div class="x-tweet-handle">@${handle}</div><div class="x-tweet-time">${timeAgo(item.pubDate)}</div></div>
-      <div class="x-tweet-text">${escapeAttr(text)}</div>
+function selectBskyAccount(i){
+  currentBskyTab=i; bskySearchMode=false;
+  DOM.bskySearchNote.classList.remove('show');
+  renderBskyTabs();
+  loadBskyFeed(bskyAccounts[i].handle);
+}
+
+function selectBskyAll(){
+  currentBskyTab=-1; bskySearchMode=false;
+  DOM.bskySearchNote.classList.remove('show');
+  renderBskyTabs();
+  loadBskyAll();
+}
+
+async function fetchBskyFeed(handle){
+  if(bskyCache[handle]&&Date.now()-bskyCache[handle].ts<120000) return bskyCache[handle].posts;
+  try{
+    const r=await fetch(`${BSKY_API}app.bsky.feed.getAuthorFeed?actor=${encodeURIComponent(handle)}&limit=25&filter=posts_no_replies`,{signal:AbortSignal.timeout(10000)});
+    if(!r.ok) throw new Error(r.status);
+    const d=await r.json();
+    const posts=(d.feed||[]).map(f=>({
+      text:f.post?.record?.text||'',
+      handle:f.post?.author?.handle||handle,
+      displayName:f.post?.author?.displayName||handle.split('.')[0],
+      time:f.post?.record?.createdAt||'',
+      uri:f.post?.uri||'',
+      hasEmbed:!!(f.post?.embed),
+      embedType:f.post?.embed?.$type||'',
+      embedTitle:f.post?.embed?.external?.title||f.post?.embed?.record?.value?.text?.substring(0,60)||''
+    }));
+    bskyCache[handle]={posts,ts:Date.now()};
+    return posts;
+  }catch(e){console.warn('Bluesky fetch error:',handle,e);return[];}
+}
+
+function postToUrl(uri,handle){
+  // at://did:plc:xyz/app.bsky.feed.post/abc → https://bsky.app/profile/handle/post/abc
+  const parts=uri.split('/');
+  const rkey=parts[parts.length-1];
+  return`https://bsky.app/profile/${handle}/post/${rkey}`;
+}
+
+function renderBskyPosts(posts){
+  if(!posts.length){
+    DOM.bskyFeed.innerHTML='<div class="bsky-loading">No posts found</div>';
+    return;
+  }
+  DOM.bskyFeed.innerHTML=posts.map(p=>{
+    const url=escapeAttr(postToUrl(p.uri,p.handle));
+    const text=escapeAttr(p.text.substring(0,300));
+    const embed=p.hasEmbed?`<div class="bsky-post-embed">${p.embedType.includes('image')?'[image]':p.embedType.includes('external')?escapeAttr(p.embedTitle):'[embed]'}</div>`:'';
+    return`<div class="bsky-post" onclick="window.open('${url}','_blank')">
+      <div class="bsky-post-header"><div class="bsky-post-dot"></div><div class="bsky-post-handle">@${p.handle}</div><div class="bsky-post-time">${timeAgo(p.time)}</div></div>
+      <div class="bsky-post-text">${text}</div>${embed}
     </div>`;
   }).join('');
 }
 
-let widgetsReady = false;
-// Detect when widgets.js loads
-(function waitWidgets(){
-  if(window.twttr&&twttr.widgets&&twttr.widgets.createTimeline){widgetsReady=true;return}
-  if(Date.now()-performance.timeOrigin>8000)return; // give up after 8s
-  setTimeout(waitWidgets,500);
-})();
+async function loadBskyFeed(handle){
+  DOM.bskyFeed.innerHTML=`<div class="bsky-loading">Loading @${handle}...</div>`;
+  DOM.bskyTitle.textContent=`Bluesky / @${handle}`;
+  const posts=await fetchBskyFeed(handle);
+  renderBskyPosts(posts);
+}
 
-async function loadXFeed(handle) {
-  DOM.xArea.innerHTML = '<div class="x-loading">Loading @' + handle + '...</div>';
-  DOM.xTitle.textContent = `X / @${handle}`;
+async function loadBskyAll(){
+  DOM.bskyFeed.innerHTML='<div class="bsky-loading">Loading all OSINT feeds...</div>';
+  DOM.bskyTitle.textContent='Bluesky / All OSINT Feeds';
+  const results=await Promise.allSettled(bskyAccounts.map(a=>fetchBskyFeed(a.handle)));
+  let allPosts=results.flatMap(r=>r.status==='fulfilled'?r.value:[]);
+  allPosts.sort((a,b)=>new Date(b.time)-new Date(a.time));
+  renderBskyPosts(allPosts.slice(0,80));
+}
 
-  // Attempt 1: widgets.js (works best on HTTPS domains)
-  if(widgetsReady){
-    try{
-      DOM.xArea.innerHTML='';
-      const el=await twttr.widgets.createTimeline(
-        {sourceType:'profile',screenName:handle},
-        DOM.xArea,
-        {theme:'dark',chrome:'noheader nofooter noborders transparent',height:DOM.xArea.clientHeight||600}
-      );
-      if(el)return; // success
-    }catch(e){console.warn('widgets.js failed for',handle,e)}
+async function loadBskySearch(query){
+  bskySearchMode=true; renderBskyTabs();
+  DOM.bskySearchNote.textContent=`Bluesky search: "${query}"`;
+  DOM.bskySearchNote.classList.add('show');
+  DOM.bskyTitle.textContent=`Bluesky / Search: ${query}`;
+  DOM.bskyFeed.innerHTML=`<div class="bsky-loading">Searching Bluesky for "${query}"...</div>`;
+  try{
+    const r=await fetch(`${BSKY_API}app.bsky.feed.searchPosts?q=${encodeURIComponent(query)}&limit=30&sort=latest`,{signal:AbortSignal.timeout(10000)});
+    if(!r.ok) throw new Error(r.status);
+    const d=await r.json();
+    const posts=(d.posts||[]).map(p=>({
+      text:p.record?.text||'',
+      handle:p.author?.handle||'',
+      displayName:p.author?.displayName||'',
+      time:p.record?.createdAt||'',
+      uri:p.uri||'',
+      hasEmbed:!!(p.embed),
+      embedType:p.embed?.$type||'',
+      embedTitle:p.embed?.external?.title||''
+    }));
+    renderBskyPosts(posts);
+  }catch(e){
+    DOM.bskyFeed.innerHTML='<div class="bsky-loading">Search unavailable — try individual feeds</div>';
   }
-
-  // Attempt 2: syndication iframe
-  tryIframeFallback(handle);
 }
 
-function tryIframeFallback(handle) {
-  DOM.xArea.innerHTML = '';
-  const iframe = document.createElement('iframe');
-  iframe.src = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${handle}?dnt=true&embedId=tw-${Date.now()}&hideBorder=true&hideFooter=true&hideHeader=true&hideScrollBar=false&lang=en&theme=dark`;
-  iframe.sandbox = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
-  iframe.style.cssText = 'width:100%;height:100%;border:none';
-  iframe.loading = 'lazy';
-  DOM.xArea.appendChild(iframe);
-  const timer = setTimeout(()=>tryRSSFallback(handle), 10000);
-  iframe.onload = () => {
-    clearTimeout(timer);
-    try {
-      const doc = iframe.contentDocument;
-      if(doc&&doc.body&&(doc.body.innerText.length<50||doc.body.innerText.includes('Rate limit'))) tryRSSFallback(handle);
-    } catch(e){/* cross-origin = loaded ok */}
-  };
-  iframe.onerror = () => { clearTimeout(timer); tryRSSFallback(handle); };
-}
-
-async function tryRSSFallback(handle) {
-  // Attempt 3: RSS bridges
-  const items = await fetchXRSS(handle);
-  if (items && items.length > 0) {
-    renderXTweets(items, handle);
-    return;
-  }
-  // Attempt 4: clickable cards
-  showCardFallback();
-}
-
-function showCardFallback(){
-  DOM.xArea.innerHTML =
-    '<div class="x-fallback-msg">Live embed unavailable — click accounts below to open in a new window</div>'+
-    '<div class="x-fallback-cards">'+
-    xAccounts.map(a=>
-      `<div class="x-card" onclick="window.open('https://x.com/${a.handle}','_blank')"><div class="x-card-dot"></div><div><div class="x-card-handle">@${a.handle}</div><div class="x-card-label">${a.label}</div></div></div>`
-    ).join('')+'</div>';
-}
-
-function loadXSearch(query) {
-  xSearchMode = true; renderXTabs();
-  DOM.xSearchNote.textContent = `X search: "${query}"`;
-  DOM.xSearchNote.classList.add('show');
-  DOM.xTitle.textContent = `X / Search: ${query}`;
-  // Open X search directly — search embeds are unreliable
-  DOM.xArea.innerHTML =
-    '<div class="x-fallback-msg">X search opened in new window</div>'+
-    `<div class="x-fallback-cards"><div class="x-card" onclick="window.open('https://x.com/search?q=${encodeURIComponent(query)}&f=live','_blank')"><div class="x-card-dot"></div><div><div class="x-card-handle">Search: "${query}"</div><div class="x-card-label">Click to open live X search</div></div></div></div>`;
-  window.open(`https://x.com/search?q=${encodeURIComponent(query)}&f=live`,'_blank');
-}
-
-renderXTabs();
-// Give widgets.js a moment to load before first attempt
-setTimeout(()=>loadXFeed(xAccounts[0].handle), 2000);
+renderBskyTabs();
+loadBskyAll();
 
 // ── RSS feeds — parallel loading ──
 // World News: mainstream breaking news from wire services & major outlets
@@ -550,7 +524,7 @@ function executeSearch(){
   DOM.filterTagTerm.textContent=query;
   DOM.filterTag.classList.add('show');
   searchFeeds(query);
-  loadXSearch(query);
+  loadBskySearch(query);
   scrollPanels.forEach(el=>scrollPause.set(el,Infinity)); // Pause auto-scroll during search
 }
 function clearFilter(){
@@ -558,11 +532,11 @@ function clearFilter(){
   DOM.filterInput.value='';
   DOM.filterTag.classList.remove('show');
   DOM.filterCount.textContent='';
-  DOM.xSearchNote.classList.remove('show');
+  DOM.bskySearchNote.classList.remove('show');
   DOM.titleWorld.textContent='World News';
   DOM.titleSec.textContent='Security & OSINT';
   loadAllFeeds();
-  selectXAccount(currentXTab);
+  selectBskyAll();
   scrollPanels.forEach(el=>scrollPause.set(el,0)); // Resume auto-scroll
 }
 DOM.filterInput.addEventListener('keydown',e=>{
