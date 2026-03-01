@@ -104,6 +104,18 @@
   .feed-item-desc{display:none;font-size:11px;line-height:1.5;color:var(--yellow-dim);margin-top:4px;padding:4px 0;border-top:1px solid var(--border)}
   .feed-item.expanded .feed-item-desc{display:block}
   .feed-preview{display:none;position:absolute;left:10px;right:10px;bottom:100%;background:rgba(6,14,32,.96);border:1px solid var(--border-bright);padding:8px 10px;font-size:11px;line-height:1.5;color:var(--yellow-dim);z-index:200;max-height:120px;overflow:hidden;pointer-events:none;box-shadow:0 -4px 16px rgba(0,0,0,.5)}
+  /* Region filter bar inside All RSS panel */
+  .region-filter-bar{display:flex;gap:2px;padding:3px 6px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);flex-shrink:0;align-items:center}
+  .region-filter-btn{background:rgba(255,215,0,.05);border:1px solid var(--border);color:var(--yellow-dim);font-size:9px;padding:2px 8px;cursor:pointer;font-family:'Courier New',monospace;font-weight:bold;letter-spacing:.5px}
+  .region-filter-btn:hover{background:rgba(255,215,0,.15);color:var(--yellow)}
+  .region-filter-btn.active{color:white;border-color:var(--yellow)}
+  .region-filter-btn.active[onclick*="ME"]{background:rgba(255,51,51,.35)}
+  .region-filter-btn.active[onclick*="EU"]{background:rgba(255,215,0,.3)}
+  .region-filter-btn.active[onclick*="US"]{background:rgba(77,184,255,.35)}
+  .region-filter-btn.active[onclick*="APAC"]{background:rgba(102,255,102,.25)}
+  .region-filter-btn.active[onclick*="OTHER"]{background:rgba(179,136,255,.25)}
+  .region-filter-btn.active[onclick*="ALL"]{background:rgba(255,215,0,.2)}
+  .region-filter-count{font-size:9px;color:var(--yellow-dim);font-family:'Courier New',monospace;margin-left:6px}
   /* Pinned breaking story */
   .pinned-breaking{padding:8px 12px;background:rgba(255,51,51,.1);border:2px solid var(--red);border-left:5px solid var(--red);margin:4px 6px;cursor:pointer;display:none}
   .pinned-breaking.show{display:block}
@@ -301,6 +313,15 @@
       <!-- All RSS panel -->
       <div class="intel-panel active" id="panel-all">
         <div class="feed-health" id="health-all"></div>
+        <div class="region-filter-bar" id="region-filter-bar">
+          <button class="region-filter-btn active" onclick="setRegionFilter('ALL')">ALL</button>
+          <button class="region-filter-btn" onclick="setRegionFilter('ME')">ME</button>
+          <button class="region-filter-btn" onclick="setRegionFilter('EU')">EU</button>
+          <button class="region-filter-btn" onclick="setRegionFilter('US')">US</button>
+          <button class="region-filter-btn" onclick="setRegionFilter('APAC')">APAC</button>
+          <button class="region-filter-btn" onclick="setRegionFilter('OTHER')">OTHER</button>
+          <span class="region-filter-count" id="region-filter-count"></span>
+        </div>
         <div class="pinned-breaking" id="pinned-breaking"></div>
         <div class="win-body" id="feed-all"></div>
       </div>
@@ -601,6 +622,23 @@ function filterByTimeWindow(items){
   if(timeWindowHours === 0) return items;
   const cutoff = Date.now() - timeWindowHours * 60 * 60 * 1000;
   return items.filter(i => new Date(i.pubDate).getTime() > cutoff);
+}
+
+// ── Region filter for All RSS panel ──
+let activeRegionFilter = 'ALL';
+function setRegionFilter(region){
+  activeRegionFilter = region;
+  document.querySelectorAll('.region-filter-btn').forEach(b => b.classList.remove('active'));
+  // Find the clicked button by matching the onclick attribute
+  document.querySelectorAll('.region-filter-btn').forEach(b => {
+    if(b.getAttribute('onclick')?.includes(`'${region}'`)) b.classList.add('active');
+  });
+  renderCurrentFeeds();
+}
+
+function filterByRegion(items){
+  if(activeRegionFilter === 'ALL') return items;
+  return items.filter(i => classifyRegion(i.title) === activeRegionFilter);
 }
 
 // ── Concurrency limiter ──
@@ -1366,11 +1404,21 @@ function updateSituationSummary(){
     lines.map(l => `<div class="situation-summary-line">${l}</div>`).join('');
 }
 
-// ── Render current feeds with time window ──
+// ── Render current feeds with time window + region filter ──
 function renderCurrentFeeds(){
   if(!worldItems.length && !securityItems.length) return;
-  renderFeedPanel(DOM.feedAll, filterByTimeWindow(worldItems));
+  const worldFiltered = filterByRegion(filterByTimeWindow(worldItems));
+  renderFeedPanel(DOM.feedAll, worldFiltered);
   renderFeedPanel(DOM.feedSec, filterByTimeWindow(securityItems));
+  // Update count
+  const countEl = $('region-filter-count');
+  if(countEl){
+    if(activeRegionFilter !== 'ALL'){
+      countEl.textContent = `${worldFiltered.length} items`;
+    } else {
+      countEl.textContent = '';
+    }
+  }
 }
 
 async function loadAllFeeds(){
@@ -1420,8 +1468,8 @@ async function loadAllFeeds(){
   allItems = deduplicateItems([...worldItems, ...securityItems]);
   if(allItems.length > MAX_ITEMS) allItems.length = MAX_ITEMS;
 
-  // Render panels — each shows its OWN feeds, not the combined set
-  renderFeedPanel(DOM.feedAll, filterByTimeWindow(worldItems));
+  // Render panels — each shows its OWN feeds, with region + time filters
+  renderFeedPanel(DOM.feedAll, filterByRegion(filterByTimeWindow(worldItems)));
   renderFeedPanel(DOM.feedSec, filterByTimeWindow(securityItems));
   DOM.updatedMain.textContent = timeStamp();
 
