@@ -591,19 +591,17 @@ function detectBreakingNews(){
 // ── Live channels (expanded) ──
 const channels = [
   {name:'Al Jazeera English',handle:'AlJazeeraEnglish',desc:'24/7 — strongest Middle East coverage',region:'ME'},
-  {name:'France 24',handle:'France24_en',desc:'24/7 — French intl, strong Africa/EU',region:'EU'},
+  {name:'France 24 (FR)',handle:'france24',desc:'24/7 — French language, Africa/EU/ME',region:'EU'},
   {name:'Sky News',handle:'SkyNews',desc:'24/7 — UK-based, fast breaking',region:'UK'},
   {name:'DW News',handle:'DWNews',desc:'24/7 — German intl, Europe/Asia',region:'EU'},
   {name:'euronews',handle:'euronews',desc:'24/7 — Pan-European multi-perspective',region:'EU'},
   {name:'TRT World',handle:'TRTWorld',desc:'24/7 — Turkish state intl',region:'ME'},
   {name:'CNA',handle:'channelnewsasia',desc:'24/7 — Singapore, Asia-Pacific',region:'APAC'},
   {name:'i24NEWS',handle:'i24NEWS_EN',desc:'Israel-based English',region:'ME'},
-  {name:'WION',handle:'WIONews',desc:'India global news, South Asia',region:'APAC'},
-  {name:'NHK World',handle:'NHKWORLD',desc:'Japan, excellent Asia coverage',region:'APAC'},
-  {name:'CNN International',handle:'cnni',desc:'24/7 — US-based global news',region:'US'},
+  {name:'Fox News (LiveNOW)',handle:'LiveNOWfromFOX',desc:'24/7 — US breaking news live',region:'US'},
+  {name:'CBS News',handle:'CBSNews',desc:'24/7 — US network news',region:'US'},
   {name:'BBC News',handle:'BBCNews',desc:'24/7 — UK public broadcaster',region:'UK'},
   {name:'NDTV',handle:'ndtv',desc:'24/7 — India, South Asia focus',region:'APAC'},
-  {name:'ABC News AU',handle:'ABCNews',desc:'24/7 — Australian Broadcasting Corp',region:'APAC'},
 ];
 const openWindows = {};
 function openChannel(i){
@@ -626,16 +624,14 @@ const BSKY_API = 'https://public.api.bsky.app/xrpc/';
 const bskyAccounts = [
   {handle:'wartranslated.bsky.social',label:'WarTranslated'},
   {handle:'eliothiggins.bsky.social',label:'Higgins'},
-  {handle:'osloeconomicsofpeace.bsky.social',label:'Peace Econ'},
   {handle:'reuters.com',label:'Reuters'},
   {handle:'apnews.com',label:'AP'},
   {handle:'theguardian.com',label:'Guardian'},
   {handle:'aljazeera.com',label:'AlJazeera'},
-  {handle:'france24.com',label:'France24'},
   {handle:'washingtonpost.com',label:'WaPo'},
   {handle:'nytimes.com',label:'NYT'},
-  {handle:'bellingcat.com',label:'Bellingcat'},
-  {handle:'bbc.com',label:'BBC'},
+  {handle:'theintercept.com',label:'Intercept'},
+  {handle:'propublica.org',label:'ProPublica'},
   {handle:'ft.com',label:'FT'},
   {handle:'economist.com',label:'Economist'},
   {handle:'foreignaffairs.com',label:'ForeignAff'},
