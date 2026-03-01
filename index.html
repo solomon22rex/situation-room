@@ -134,12 +134,18 @@
   .ticker-bar{display:flex;align-items:center;background:linear-gradient(180deg,#0d2a5c,#081a3a);border-top:1px solid var(--border-bright);overflow:hidden}
   .ticker-label{flex-shrink:0;padding:0 12px;font-weight:bold;font-size:11px;letter-spacing:2px;background:var(--red);color:white;height:100%;display:flex;align-items:center;font-family:'Courier New',monospace}
   .ticker-content{flex:1;overflow:hidden;white-space:nowrap;padding-left:8px;padding-right:64px}
-  .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 220s linear infinite;font-size:14px}
+  .ticker-scroll{display:inline-block;white-space:nowrap;animation:ticker-move 120s linear infinite;font-size:14px}
   .ticker-scroll:hover{animation-play-state:paused}
   @keyframes ticker-move{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
   .ticker-src{color:var(--blue-bright);font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
   .ticker-bsky{color:#0085ff;font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
-  .ticker-sep{color:var(--yellow-dim);margin:0 24px}
+  .ticker-sep{color:var(--yellow-dim);margin:0 18px}
+  .stock-sym{font-weight:bold;font-family:'Courier New',monospace;font-size:12px;color:var(--blue-bright);letter-spacing:1px}
+  .stock-price{font-family:'Courier New',monospace;font-size:13px;color:var(--yellow);margin:0 3px}
+  .stock-up{color:var(--green)}
+  .stock-down{color:var(--red)}
+  .stock-flat{color:var(--yellow-dim)}
+  .stock-change{font-family:'Courier New',monospace;font-size:11px;margin-left:2px}
   .kbd-hint{position:fixed;bottom:40px;right:8px;font-size:8px;color:rgba(255,215,0,.25);z-index:10;font-family:Arial;letter-spacing:.5px}
   .resize-handle{position:absolute;bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize;z-index:5}
   .resize-handle::after{content:'';position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-right:2px solid var(--yellow-dim);border-bottom:2px solid var(--yellow-dim);opacity:.4}
@@ -179,7 +185,7 @@
       <div class="logo-area">
         <div class="logo">SITUATION MONITOR</div>
         <div class="status-badge"><div class="dot-live"></div> ALL SYSTEMS ACTIVE</div>
-        <div class="breaking-indicator" id="breaking-indicator" onclick="focusAlerts()">BREAKING<div class="breaking-popup" id="breaking-popup"></div></div>
+        <div class="breaking-indicator" id="breaking-indicator" onclick="dismissBreaking()">BREAKING<div class="breaking-popup" id="breaking-popup"></div></div>
       </div>
       <div class="clocks">
         <div class="clock-item"><div class="clock-label">LOS ANGELES</div><div class="clock-time" id="ck-la"></div></div>
@@ -287,7 +293,7 @@
     </div>
   </div>
   <div class="ticker-bar">
-    <div class="ticker-label">BREAKING</div>
+    <div class="ticker-label">MARKETS</div>
     <div class="ticker-content"><div class="ticker-scroll" id="ticker"></div></div>
     <div class="globe-container">
       <div class="globe">
@@ -366,6 +372,11 @@ function focusAlerts(){
   el.classList.remove('minimized');
   bringToFront(el);
 }
+function dismissBreaking(){
+  DOM.breakingIndicator.classList.remove('show');
+  breakingDismissedUntil = Date.now() + 10 * 60 * 1000; // suppress for 10 min
+}
+let breakingDismissedUntil = 0;
 
 // ── Intel panel tab switcher ──
 function switchIntelTab(tab){
@@ -594,6 +605,7 @@ function tokenize(text){
 function detectBreakingNews(){
   const now = Date.now();
   const recentWindow = 30 * 60 * 1000;
+  if(now < breakingDismissedUntil) return; // respect dismiss
   const recent = allItems.filter(i => (now - new Date(i.pubDate).getTime()) < recentWindow);
   if(recent.length < 3){ DOM.breakingIndicator.classList.remove('show'); return; }
 
@@ -1048,20 +1060,61 @@ async function searchFeeds(query){
   DOM.filterCount.textContent=`${deduped.length} results`;
 }
 
-function buildTicker(){
-  const sorted=[...allItems].sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate)).slice(0,40);
-  const rssEntries = sorted.map(i => `<span><span class="ticker-src">${escapeAttr(i.sourceName)}</span> ${escapeAttr(stripHTML(i.title))}</span>`);
-  const bskyEntries = bskyTickerPosts.slice(0,10).map(p => `<span><span class="ticker-bsky">@${escapeAttr(p.handle)}</span> ${escapeAttr(p.text.substring(0,120))}</span>`);
-  const merged = [];
-  let bi = 0;
-  for(let i = 0; i < rssEntries.length; i++){
-    merged.push(rssEntries[i]);
-    if((i+1) % 4 === 0 && bi < bskyEntries.length){
-      merged.push(bskyEntries[bi++]);
+// ── Stock Ticker ──
+const STOCK_SYMBOLS = [
+  '^GSPC','^DJI','^IXIC','^RUT',    // US indices: S&P 500, Dow, Nasdaq, Russell 2000
+  '^VIX',                              // Volatility
+  'GC=F','CL=F','SI=F',               // Gold, Oil, Silver futures
+  'BTC-USD','ETH-USD',                 // Crypto
+  'AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA', // Mega caps
+  'DX-Y.NYB','^TNX',                  // Dollar index, 10Y yield
+];
+const STOCK_LABELS = {
+  '^GSPC':'S&P 500','^DJI':'DOW','^IXIC':'NASDAQ','^RUT':'RUT 2K',
+  '^VIX':'VIX','GC=F':'GOLD','CL=F':'OIL','SI=F':'SILVER',
+  'BTC-USD':'BTC','ETH-USD':'ETH',
+  'AAPL':'AAPL','MSFT':'MSFT','NVDA':'NVDA','GOOGL':'GOOG','AMZN':'AMZN','META':'META','TSLA':'TSLA',
+  'DX-Y.NYB':'DXY','^TNX':'10Y',
+};
+let stockData = [];
+
+async function fetchStockPrices(){
+  const syms = STOCK_SYMBOLS.join(',');
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=symbol,regularMarketPrice,regularMarketChange,regularMarketChangePercent`;
+  try {
+    const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(15000)});
+    const d = await r.json();
+    if(d.quoteResponse && d.quoteResponse.result){
+      stockData = d.quoteResponse.result;
+      renderStockTicker();
     }
+  } catch(e){ console.warn('Stock fetch error:', e); }
+}
+
+function renderStockTicker(){
+  if(!stockData.length){
+    DOM.ticker.innerHTML = '<span style="color:var(--yellow-dim)">Loading market data...</span>';
+    return;
   }
-  while(bi < bskyEntries.length) merged.push(bskyEntries[bi++]);
-  DOM.ticker.innerHTML = merged.join('<span class="ticker-sep">&#x25C6;</span>');
+  const entries = stockData.map(q => {
+    const sym = STOCK_LABELS[q.symbol] || q.symbol;
+    const price = (q.regularMarketPrice||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const chg = q.regularMarketChange||0;
+    const chgPct = q.regularMarketChangePercent||0;
+    const cls = chg > 0 ? 'stock-up' : chg < 0 ? 'stock-down' : 'stock-flat';
+    const arrow = chg > 0 ? '&#9650;' : chg < 0 ? '&#9660;' : '&#9644;';
+    const sign = chg > 0 ? '+' : '';
+    return `<span><span class="stock-sym">${sym}</span> <span class="stock-price">${price}</span><span class="stock-change ${cls}">${arrow} ${sign}${chgPct.toFixed(2)}%</span></span>`;
+  });
+  DOM.ticker.innerHTML = entries.join('<span class="ticker-sep">&#x25C6;</span>');
+}
+
+function buildTicker(){
+  // Initial call — show loading then fetch stocks
+  if(!stockData.length){
+    DOM.ticker.innerHTML = '<span style="color:var(--yellow-dim)">Loading market data...</span>';
+    fetchStockPrices();
+  }
 }
 
 // ── Search controller ──
@@ -1128,6 +1181,10 @@ setTimeout(() => {
     }
   }, 300000);
 }, 150000); // Offset Bluesky refresh by 2.5 minutes
+
+// Stock prices refresh every 2 minutes
+fetchStockPrices();
+setInterval(fetchStockPrices, 120000);
 </script>
 </body>
 </html>
