@@ -550,10 +550,32 @@ setInterval(() => {
 function stripHTML(s){return(s||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim()}
 function escapeAttr(s){return(s||'').replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
+// Robust date parser — handles RSS/Atom date quirks
+function parseDate(d){
+  if(!d) return null;
+  // Already a Date
+  if(d instanceof Date) return isNaN(d.getTime()) ? null : d;
+  let str = String(d).trim();
+  // Try native parse first
+  let ts = new Date(str).getTime();
+  if(!isNaN(ts)) return new Date(ts);
+  // Fix timezone without colon: +0100 → +01:00
+  const tzFix = str.replace(/([+-]\d{2})(\d{2})$/, '$1:$2');
+  if(tzFix !== str){ ts = new Date(tzFix).getTime(); if(!isNaN(ts)) return new Date(ts); }
+  // Try removing day name prefix: "Mon, 01 Mar 2026..." → "01 Mar 2026..."
+  const noDayName = str.replace(/^[A-Za-z]{3,},?\s*/, '');
+  ts = new Date(noDayName).getTime();
+  if(!isNaN(ts)) return new Date(ts);
+  return null;
+}
+
 // Feature #4: Fix timestamps — show granular "2m", "7m", "23m" not just "NOW"
 function timeAgo(d){
-  const ms = Date.now() - new Date(d).getTime();
-  if(ms < 0 || isNaN(ms)) return '?';
+  const parsed = parseDate(d);
+  if(!parsed) return 'NEW'; // fallback for unparseable dates — better than '?'
+  const ms = Date.now() - parsed.getTime();
+  if(ms < 0) return 'JUST NOW'; // slightly future dates (clock skew) are fine
+  if(isNaN(ms)) return 'NEW';
   const sec = Math.floor(ms/1000);
   if(sec < 30) return 'JUST NOW';
   const m = Math.floor(sec/60);
@@ -1176,7 +1198,11 @@ async function fetchFeed(src){
           feedsLoaded++;
           feedHealth[src.name] = 'ok';
           DOM.sysFeeds.textContent = `FEEDS: ${feedsLoaded}/${totalFeeds}`;
-          const items = d.items.map(i=>({...i,sourceName:src.name}));
+          const items = d.items.map(i=>{
+            // Normalize pubDate so timeAgo never gets unparseable strings
+            const parsed = parseDate(i.pubDate);
+            return {...i, pubDate: parsed ? parsed.toISOString() : new Date().toISOString(), sourceName:src.name};
+          });
           items.forEach(item => checkItemAgainstWatchlist(item, 'rss'));
           rssCache[src.name] = {items, ts:Date.now()};
           return items;
@@ -1193,7 +1219,19 @@ async function fetchFeed(src){
           const items = Array.from(entries).slice(0,20).map(entry => {
             const title = entry.querySelector('title')?.textContent || '';
             const link = entry.querySelector('link')?.textContent || entry.querySelector('link')?.getAttribute('href') || '';
-            const pubDate = entry.querySelector('pubDate, published, updated')?.textContent || '';
+            // Try multiple date element names (pubDate, published, updated, date, dc:date)
+            let rawDate = entry.querySelector('pubDate')?.textContent
+              || entry.querySelector('published')?.textContent
+              || entry.querySelector('updated')?.textContent
+              || entry.querySelector('date')?.textContent || '';
+            // Also check for dc:date (Dublin Core namespace — used by Le Monde, many EU feeds)
+            if(!rawDate){
+              const dcDate = entry.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'date')[0];
+              if(dcDate) rawDate = dcDate.textContent;
+            }
+            // Normalize: parse and re-serialize to ISO string so all downstream code works
+            const parsed = parseDate(rawDate);
+            const pubDate = parsed ? parsed.toISOString() : new Date().toISOString();
             const desc = entry.querySelector('description, summary, content')?.textContent || '';
             return {title, link, pubDate, description:desc, sourceName:src.name};
           });
