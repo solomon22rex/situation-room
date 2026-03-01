@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SITUATION ROOM // OSINT DASHBOARD</title>
+<title>SITUATION MONITOR // OSINT DASHBOARD</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   :root{
@@ -13,7 +13,7 @@
     --red:#ff3333;--border:rgba(255,215,0,.25);--border-bright:rgba(255,215,0,.5);
   }
   body{background:var(--bg);color:var(--yellow);font-family:'Times New Roman',Times,Georgia,serif;overflow:hidden;height:100vh;width:100vw;user-select:none}
-  .dashboard{display:grid;grid-template-rows:auto 1fr 36px;height:100vh;gap:2px;background:var(--bg-deep)}
+  .dashboard{display:grid;grid-template-rows:auto 1fr 36px;height:100vh;gap:0;background:var(--bg-deep)}
   .header{background:linear-gradient(180deg,#0d2a5c,#081a3a);border-bottom:1px solid var(--border-bright);padding:6px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
   .logo-area{display:flex;align-items:center;gap:14px}
   .logo{font-size:20px;font-weight:bold;letter-spacing:3px;text-shadow:0 0 12px rgba(255,215,0,.4)}
@@ -35,13 +35,15 @@
   .filter-btn:hover{background:rgba(255,215,0,.2);border-color:var(--yellow)}
   .filter-active-tag{font-size:10px;background:rgba(255,51,51,.2);border:1px solid var(--red);color:var(--yellow);padding:2px 8px;display:none;align-items:center;gap:4px}
   .filter-active-tag.show{display:flex}
-  .main-content{display:grid;grid-template-columns:1fr 1fr 1.6fr 1.4fr;gap:2px;overflow:hidden;min-height:0}
-  .win{background:var(--blue-panel);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;transition:all .3s;position:relative}
-  .win.minimized{flex:0 0 auto!important;max-height:28px!important;overflow:hidden}
-  .win.minimized .win-body,.win.minimized .channels-body,.win.minimized .open-windows-bar,.win.minimized .bsky-feed,.win.minimized .bsky-tabs{display:none}
-  .win.maximized{position:fixed!important;top:0;left:0;right:0;bottom:0;z-index:100;max-height:none!important}
-  .win-titlebar{background:linear-gradient(90deg,#1a3a7a,#2a5aaa);padding:4px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border)}
-  .win-titlebar-text{font-size:12px;font-weight:bold;color:var(--yellow);letter-spacing:.5px}
+  .main-content{position:relative;overflow:hidden;min-height:0;background:var(--bg-deep)}
+  .win{background:var(--blue-panel);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:absolute;transition:box-shadow .2s;min-width:180px;min-height:100px}
+  .win.active-win{z-index:50;box-shadow:0 0 20px rgba(255,215,0,.15)}
+  .win.minimized .win-body,.win.minimized .channels-body,.win.minimized .open-windows-bar,.win.minimized .bsky-feed,.win.minimized .bsky-tabs,.win.minimized .bsky-search-note{display:none}
+  .win.minimized{height:28px!important;min-height:28px!important;overflow:hidden}
+  .win.maximized{left:0!important;top:0!important;width:100%!important;height:100%!important;z-index:100!important}
+  .win-titlebar{background:linear-gradient(90deg,#1a3a7a,#2a5aaa);padding:4px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border);cursor:grab}
+  .win-titlebar:active{cursor:grabbing}
+  .win-titlebar-text{font-size:12px;font-weight:bold;color:var(--yellow);letter-spacing:.5px;pointer-events:none}
   .win-btns{display:flex;gap:3px}
   .win-btn{width:18px;height:16px;background:var(--blue-dark);border:1px solid var(--border);color:var(--yellow);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Arial;padding:0;line-height:1}
   .win-btn:hover{background:rgba(255,215,0,.15);border-color:var(--yellow)}
@@ -96,11 +98,13 @@
   .ticker-src{color:var(--blue-bright);font-weight:bold;font-size:10px;text-transform:uppercase;font-family:Arial}
   .ticker-sep{color:var(--yellow-dim);margin:0 24px}
   .kbd-hint{position:fixed;bottom:40px;right:8px;font-size:8px;color:rgba(255,215,0,.25);z-index:10;font-family:Arial;letter-spacing:.5px}
+  .resize-handle{position:absolute;bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize;z-index:5}
+  .resize-handle::after{content:'';position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-right:2px solid var(--yellow-dim);border-bottom:2px solid var(--yellow-dim);opacity:.4}
+  .resize-handle:hover::after{opacity:.8}
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:rgba(255,215,0,.2);border-radius:3px}
   ::-webkit-scrollbar-thumb:hover{background:rgba(255,215,0,.35)}
-  @media(max-width:1200px){.main-content{grid-template-columns:1fr 2fr 1fr}.main-content>.win:nth-child(2){display:none}}
 </style>
 </head>
 <body>
@@ -108,7 +112,7 @@
   <div>
     <div class="header">
       <div class="logo-area">
-        <div class="logo">SITUATION ROOM</div>
+        <div class="logo">SITUATION MONITOR</div>
         <div class="status-badge"><div class="dot-live"></div> ALL SYSTEMS ACTIVE</div>
       </div>
       <div class="clocks">
@@ -145,6 +149,7 @@
         </div>
       </div>
       <div class="win-body" id="feed-world"></div>
+      <div class="resize-handle" data-win="win-world"></div>
     </div>
     <div class="win" id="win-security">
       <div class="win-titlebar">
@@ -155,6 +160,7 @@
         </div>
       </div>
       <div class="win-body" id="feed-security"></div>
+      <div class="resize-handle" data-win="win-security"></div>
     </div>
     <div class="win" id="win-video">
       <div class="win-titlebar">
@@ -171,6 +177,7 @@
           <span style="font-size:10px;color:var(--yellow-dim);font-style:italic">Click a channel above to open</span>
         </div>
       </div>
+      <div class="resize-handle" data-win="win-video"></div>
     </div>
     <div class="win" id="win-bsky">
       <div class="win-titlebar" style="background:linear-gradient(90deg,#003366,#0055aa)">
@@ -185,6 +192,7 @@
       <div class="bsky-feed" id="bsky-feed">
         <div class="bsky-loading">Loading Bluesky feeds...</div>
       </div>
+      <div class="resize-handle" data-win="win-bsky"></div>
     </div>
   </div>
   <div class="ticker-bar">
@@ -192,7 +200,7 @@
     <div class="ticker-content"><div class="ticker-scroll" id="ticker"></div></div>
   </div>
 </div>
-<div class="kbd-hint">1-0 channels &bull; R refresh &bull; F fullscreen &bull; / search &bull; ESC clear</div>
+<div class="kbd-hint">Drag titlebars to move &bull; Drag corners to resize &bull; 1-0 channels &bull; R refresh &bull; F fullscreen &bull; / search</div>
 
 <script>
 // ── Cached DOM refs ──
@@ -206,12 +214,111 @@ const DOM = {
   bskyTabs: $('bsky-tabs'), bskyFeed: $('bsky-feed'),
   bskyTitle: $('bsky-panel-title'), bskySearchNote: $('bsky-search-note'),
   ticker: $('ticker'), channelsBody: $('channels-body'),
-  openWinList: $('open-windows-list'),
+  openWinList: $('open-windows-list'), mainGrid: $('main-grid'),
   clocks: [['ck-la','America/Los_Angeles'],['ck-nyc','America/New_York'],
     ['ck-lon','Europe/London'],['ck-tlv','Asia/Jerusalem'],
     ['ck-mow','Europe/Moscow'],['ck-bjs','Asia/Shanghai'],['ck-tyo','Asia/Tokyo']]
     .map(([id,tz])=>({el:$(id),tz}))
 };
+
+// ── Window management: drag, resize, z-index ──
+const winIds = ['win-world','win-security','win-video','win-bsky'];
+// Default layout as percentage of container: [left%, top%, width%, height%]
+const defaultLayout = {
+  'win-world':    [0,   0, 20,  100],
+  'win-security': [20,  0, 20,  100],
+  'win-video':    [40,  0, 32,  100],
+  'win-bsky':     [60,  0, 28,  100],
+};
+// Gap in pixels between windows
+const GAP = 2;
+let topZ = 10;
+
+function layoutWindows(){
+  const rect = DOM.mainGrid.getBoundingClientRect();
+  const cw = rect.width, ch = rect.height;
+  winIds.forEach(id => {
+    const el = $(id);
+    const [lp, tp, wp, hp] = defaultLayout[id];
+    // Convert percentage + add small gaps
+    const left = Math.round(cw * lp / 100) + (lp > 0 ? GAP : 0);
+    const top = Math.round(ch * tp / 100);
+    const width = Math.round(cw * wp / 100) - GAP;
+    const height = Math.round(ch * hp / 100);
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.style.width = width + 'px';
+    el.style.height = height + 'px';
+    el.classList.remove('minimized','maximized');
+  });
+  topZ = 10;
+}
+
+// Initial layout
+layoutWindows();
+
+function bringToFront(el){
+  winIds.forEach(id => $(id).classList.remove('active-win'));
+  el.style.zIndex = ++topZ;
+  el.classList.add('active-win');
+}
+
+// ── Drag (titlebar) ──
+let dragState = null;
+document.querySelectorAll('.win-titlebar').forEach(bar => {
+  bar.addEventListener('mousedown', e => {
+    if(e.target.closest('.win-btn')) return; // don't drag when clicking buttons
+    const win = bar.closest('.win');
+    if(win.classList.contains('maximized')) return;
+    bringToFront(win);
+    const rect = win.getBoundingClientRect();
+    const containerRect = DOM.mainGrid.getBoundingClientRect();
+    dragState = {
+      win, startX: e.clientX, startY: e.clientY,
+      origLeft: rect.left - containerRect.left,
+      origTop: rect.top - containerRect.top
+    };
+    e.preventDefault();
+  });
+});
+
+// ── Resize (corner handle) ──
+let resizeState = null;
+document.querySelectorAll('.resize-handle').forEach(handle => {
+  handle.addEventListener('mousedown', e => {
+    const win = handle.closest('.win');
+    if(win.classList.contains('maximized')) return;
+    bringToFront(win);
+    resizeState = {
+      win, startX: e.clientX, startY: e.clientY,
+      origW: win.offsetWidth, origH: win.offsetHeight
+    };
+    e.preventDefault();
+  });
+});
+
+document.addEventListener('mousemove', e => {
+  if(dragState){
+    const dx = e.clientX - dragState.startX;
+    const dy = e.clientY - dragState.startY;
+    dragState.win.style.left = (dragState.origLeft + dx) + 'px';
+    dragState.win.style.top = (dragState.origTop + dy) + 'px';
+  }
+  if(resizeState){
+    const dx = e.clientX - resizeState.startX;
+    const dy = e.clientY - resizeState.startY;
+    const newW = Math.max(180, resizeState.origW + dx);
+    const newH = Math.max(100, resizeState.origH + dy);
+    resizeState.win.style.width = newW + 'px';
+    resizeState.win.style.height = newH + 'px';
+  }
+});
+document.addEventListener('mouseup', () => { dragState = null; resizeState = null; });
+
+// Click anywhere on a window to bring it to front
+winIds.forEach(id => {
+  $(id).addEventListener('mousedown', () => bringToFront($(id)), true);
+});
 
 // ── Combined 1s tick: clocks + uptime ──
 const t0 = Date.now();
@@ -225,10 +332,27 @@ function tick() {
 setInterval(tick, 1000); tick();
 
 // ── Window controls ──
-function toggleMin(id){const el=$(id);el.classList.toggle('minimized');el.classList.remove('maximized')}
-function toggleMax(id){const el=$(id);el.classList.contains('maximized')?el.classList.remove('maximized'):(el.classList.remove('minimized'),el.classList.add('maximized'))}
+function toggleMin(id){
+  const el=$(id);
+  if(el.classList.contains('minimized')){
+    el.classList.remove('minimized');
+  } else {
+    el.classList.remove('maximized');
+    el.classList.add('minimized');
+  }
+}
+function toggleMax(id){
+  const el=$(id);
+  if(el.classList.contains('maximized')){
+    el.classList.remove('maximized');
+  } else {
+    el.classList.remove('minimized');
+    el.classList.add('maximized');
+  }
+  bringToFront(el);
+}
 
-// ── Auto-scroll via rAF (more efficient than setInterval) ──
+// ── Auto-scroll via rAF ──
 const scrollPanels = [DOM.feedWorld, DOM.feedSec].filter(Boolean);
 const scrollPause = new Map();
 scrollPanels.forEach(el => {
@@ -344,7 +468,6 @@ async function fetchBskyFeed(handle){
 }
 
 function postToUrl(uri,handle){
-  // at://did:plc:xyz/app.bsky.feed.post/abc → https://bsky.app/profile/handle/post/abc
   const parts=uri.split('/');
   const rkey=parts[parts.length-1];
   return`https://bsky.app/profile/${handle}/post/${rkey}`;
@@ -412,8 +535,6 @@ renderBskyTabs();
 loadBskyAll();
 
 // ── RSS feeds — parallel loading ──
-// World News: mainstream breaking news from wire services & major outlets
-// Security & OSINT: niche intel, conflict analysis, investigations — NOT general news
 const feedConfig = {
   world: [
     {name:'BBC World',url:'https://feeds.bbci.co.uk/news/world/rss.xml'},
@@ -444,7 +565,6 @@ const feedConfig = {
 let allItems = [], feedsLoaded = 0;
 const totalFeeds = Object.values(feedConfig).flat().length;
 
-// Strip HTML tags and truncate for clean display
 function stripHTML(s){return(s||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim()}
 function escapeAttr(s){return s.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
@@ -469,7 +589,6 @@ async function fetchFeed(src){
 
 async function loadAllFeeds(){
   feedsLoaded=0; allItems=[];
-  // Fire ALL feeds in parallel
   const promises = {};
   for(const[key,sources]of Object.entries(feedConfig)){
     promises[key] = Promise.allSettled(sources.map(fetchFeed));
@@ -510,7 +629,6 @@ async function searchFeeds(query){
 }
 
 function buildTicker(){
-  // allItems already sorted per-panel; just take first 50 by date
   const sorted=[...allItems].sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate)).slice(0,50);
   DOM.ticker.innerHTML=sorted.map(i=>`<span><span class="ticker-src">${i.sourceName}</span> ${escapeAttr(stripHTML(i.title))}</span><span class="ticker-sep">&#x25C6;</span>`).join('');
 }
@@ -525,7 +643,7 @@ function executeSearch(){
   DOM.filterTag.classList.add('show');
   searchFeeds(query);
   loadBskySearch(query);
-  scrollPanels.forEach(el=>scrollPause.set(el,Infinity)); // Pause auto-scroll during search
+  scrollPanels.forEach(el=>scrollPause.set(el,Infinity));
 }
 function clearFilter(){
   activeSearch='';
@@ -537,7 +655,7 @@ function clearFilter(){
   DOM.titleSec.textContent='Security & OSINT';
   loadAllFeeds();
   selectBskyAll();
-  scrollPanels.forEach(el=>scrollPause.set(el,0)); // Resume auto-scroll
+  scrollPanels.forEach(el=>scrollPause.set(el,0));
 }
 DOM.filterInput.addEventListener('keydown',e=>{
   if(e.key==='Enter'){executeSearch();e.target.blur()}
@@ -558,7 +676,7 @@ document.addEventListener('keydown',e=>{
 
 // ── Init ──
 loadAllFeeds();
-setInterval(()=>{if(!activeSearch)loadAllFeeds()},300000); // Refresh every 5 min
+setInterval(()=>{if(!activeSearch)loadAllFeeds()},300000);
 </script>
 </body>
 </html>
