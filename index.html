@@ -668,21 +668,6 @@ function sendNotif(title, body, tag){
   }
 }
 
-// ── Feature #11: Audio chime on breaking news ──
-let audioCtx = null;
-function playBreakingChime(){
-  try{
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.type = 'sine'; osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.8);
-  }catch(e){}
-}
 
 // ── Watchlist / Alerts System ──
 let watchlist = ['iran','nuclear','taiwan','ukraine','russia nato','missile strike','cyberattack','coup','sanctions','hezbollah','houthi'];
@@ -799,7 +784,6 @@ function tokenize(text){
   return text.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w));
 }
 
-let lastBreakingChime = 0;
 function detectBreakingNews(){
   const now = Date.now();
   const recentWindow = 30 * 60 * 1000;
@@ -861,11 +845,6 @@ function detectBreakingNews(){
     const existing = DOM.alertsBody.innerHTML;
     if(!existing.includes('breaking-cluster')){
       DOM.alertsBody.innerHTML = clusterHTML + existing;
-    }
-    // Feature #11: Audio chime
-    if(now - lastBreakingChime > 60000){
-      playBreakingChime();
-      lastBreakingChime = now;
     }
     sendNotif('BREAKING NEWS', stripHTML(clusters[0].items[0].title||'').substring(0,100), 'breaking-' + Date.now());
   } else {
