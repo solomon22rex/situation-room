@@ -97,7 +97,6 @@
   .feed-item.src-security{border-left-color:var(--src-security)}
   .feed-item.src-israeli{border-left-color:var(--src-israeli)}
   .feed-item.fresh{border-left-width:4px}
-  .feed-item.stale{opacity:.55}
   .feed-item-time{font-size:9px;color:var(--blue-bright);font-family:'Courier New',monospace}
   .feed-item-title{font-size:13px;line-height:1.4;color:var(--yellow);margin-top:1px}
   .feed-item-source{font-size:9px;color:var(--yellow-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
@@ -1199,8 +1198,7 @@ function getSourceClass(name){
 
 function getFreshnessClass(pubDate){
   const age = Date.now() - new Date(pubDate).getTime();
-  if(age < 10*60*1000) return 'fresh'; // <10 min
-  if(age > 2*60*60*1000) return 'stale'; // >2 hours
+  if(age < 10*60*1000) return 'fresh'; // <10 min — thicker left border
   return '';
 }
 
