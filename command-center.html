@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command Center â Azrieli Family Office</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@300..900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --bg-card: #FFFFFF;
+    --bg-elevated: #FAFAFA;
+    --text-primary: #111111;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --accent: #0012FF;
+    --accent-light: rgba(0, 18, 255, 0.04);
+    --accent-hover: #0010D9;
+    --border: #E5E5E5;
+    --border-light: #F0F0F0;
+    --green: #1A7A42;
+    --green-bg: #F0FAF4;
+    --red: #C2291E;
+    --red-bg: #FEF1F0;
+    --amber: #A85D00;
+    --amber-bg: #FFF8EB;
+    --radius: 2px;
+    --radius-lg: 4px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-serif: 'DM Serif Display', Georgia, serif;
+    --tracking-wide: 0.12em;
+    --tracking-ultra: 0.25em;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 48px 24px; }
+
+  .header {
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-size: 38px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: var(--tracking-ultra);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .summary-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: var(--tracking-ultra);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .summary-value {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 400;
+  }
+
+  /* ââ KPI Strip ââ */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .kpi-card {
+    background: var(--bg-card);
+    padding: 24px 20px;
+  }
+
+  .kpi-card .summary-value { font-size: 24px; }
+
+  .kpi-change {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .kpi-change.positive { color: var(--green); }
+  .kpi-change.negative { color: var(--red); }
+
+  /* ââ Main Layout ââ */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  .panel-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 32px;
+  }
+
+  .panel-card h2 {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 400;
+    margin-bottom: 4px;
+  }
+
+  .panel-meta {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+
+  .full-width { grid-column: 1 / -1; }
+
+  /* ââ Tables ââ */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: var(--tracking-ultra);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .data-table th.right, .data-table td.right { text-align: right; }
+
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover { background: var(--bg-elevated); }
+
+  .ticker {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    border-radius: var(--radius);
+  }
+  .badge-cad { background: var(--accent-light); color: var(--accent); }
+  .badge-usd { background: var(--amber-bg); color: var(--amber); }
+  .badge-brokerage { background: var(--accent-light); color: var(--accent); }
+  .badge-checking { background: var(--green-bg); color: var(--green); }
+  .badge-savings { background: var(--green-bg); color: var(--green); }
+  .badge-credit_card { background: var(--red-bg); color: var(--red); }
+  .badge-other { background: var(--bg-elevated); color: var(--text-muted); }
+
+  .acct-slug {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* ââ Chart Container ââ */
+  .chart-wrap { position: relative; height: 240px; margin-top: 12px; }
+
+  /* ââ Properties ââ */
+  .prop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .prop-card {
+    background: var(--bg-card);
+    padding: 20px;
+  }
+
+  .prop-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .prop-location { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+  .prop-value { font-family: var(--font-serif); font-size: 20px; }
+  .prop-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ââ Allocation Bar ââ */
+  .alloc-row { margin-bottom: 12px; }
+  .alloc-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .alloc-label span:first-child { font-weight: 600; }
+  .alloc-label span:last-child { color: var(--text-secondary); }
+  .alloc-bar {
+    height: 6px;
+    background: var(--border-light);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .alloc-fill {
+    height: 100%;
+    border-radius: 1px;
+    transition: width 0.6s ease;
+  }
+
+  /* ââ Footer ââ */
+  .footer {
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+  }
+
+  /* ââ Responsive ââ */
+  @media (max-width: 768px) {
+    .container { padding: 20px 14px; }
+    h1 { font-size: 26px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+    .prop-grid { grid-template-columns: 1fr; }
+    .kpi-card .summary-value { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="subtitle">Azrieli Family Office</div>
+    <h1>Command Center</h1>
+    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;" id="header-date"></div>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card"><div class="summary-label">Total Net Worth</div><div class="summary-value" id="kpi-nw">&mdash;</div><div class="kpi-change" id="kpi-nw-chg"></div></div>
+    <div class="kpi-card"><div class="summary-label">Investments</div><div class="summary-value" id="kpi-inv">&mdash;</div></div>
+    <div class="kpi-card"><div class="summary-label">Real Estate</div><div class="summary-value" id="kpi-re">&mdash;</div></div>
+    <div class="kpi-card"><div class="summary-label">Cash &amp; Banking</div><div class="summary-value" id="kpi-cash">&mdash;</div></div>
+    <div class="kpi-card"><div class="summary-label">Angel / Venture</div><div class="summary-value" id="kpi-angel">&mdash;</div></div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-grid">
+
+    <!-- ACCOUNTS TABLE -->
+    <div class="panel-card">
+      <div class="section-label">Accounts</div>
+      <h2>Account Overview</h2>
+      <div class="panel-meta">All accounts as of latest sync</div>
+      <div style="max-height: 480px; overflow-y: auto;">
+        <table class="data-table">
+          <thead><tr><th>Account</th><th>Institution</th><th>Type</th><th class="right">Balance</th></tr></thead>
+          <tbody id="accounts-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TOP HOLDINGS TABLE -->
+    <div class="panel-card">
+      <div class="section-label">Holdings</div>
+      <h2>Top Positions</h2>
+      <div class="panel-meta">Top 30 by market value</div>
+      <div style="max-height: 480px; overflow-y: auto;">
+        <table class="data-table">
+          <thead><tr><th>Ticker</th><th>Name</th><th class="right">Value</th><th>Account</th></tr></thead>
+          <tbody id="holdings-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NET WORTH TREND -->
+    <div class="panel-card">
+      <div class="section-label">Trend</div>
+      <h2>Net Worth History</h2>
+      <div class="panel-meta">Monthly snapshots, USD</div>
+      <div class="chart-wrap"><canvas id="nw-chart"></canvas></div>
+    </div>
+
+    <!-- ALLOCATION -->
+    <div class="panel-card">
+      <div class="section-label">Allocation</div>
+      <h2>By Account</h2>
+      <div class="panel-meta">Investment allocation by account</div>
+      <div id="alloc-bars" style="margin-top: 16px;"></div>
+    </div>
+
+    <!-- REAL ESTATE -->
+    <div class="panel-card full-width">
+      <div class="section-label">Real Estate</div>
+      <h2>Properties</h2>
+      <div class="panel-meta">Residential holdings</div>
+      <div class="prop-grid" id="prop-grid" style="margin-top: 16px;"></div>
+    </div>
+
+  </div>
+
+  <div class="footer" id="footer">AZRIELI FAMILY OFFICE &bull; CONFIDENTIAL &bull; LOADING...</div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://zdaeuqbgpntcmosropjs.supabase.co';
+const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYWV1cWJncG50Y21vc3JvcGpzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDMwNDc0OCwiZXhwIjoyMDg5ODgwNzQ4fQ.XD0tpT3bL1dHD2l4VIHUbSnAYx0CH4hEABh7HhSStiE';
+const headers = { 'apikey': API_KEY, 'Authorization': 'Bearer ' + API_KEY };
+
+async function q(table, params) {
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + (params || ''), { headers });
+  return r.json();
+}
+
+function fmt(n) {
+  if (n == null) return '\u2014';
+  return '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+function fmtK(n) {
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
+  return fmt(n);
+}
+
+const COLORS = ['#0012FF','#1A7A42','#A85D00','#C2291E','#6B21A8','#0891B2','#BE185D','#65A30D','#9333EA','#EA580C'];
+
+document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+(async function() {
+  try {
+    const [accounts, balances, holdings, properties, nwHistory, fxRates] = await Promise.all([
+      q('accounts', 'select=*&order=slug'),
+      q('balances', 'select=*,accounts(slug,name,account_type,currency)&order=balance_usd.desc'),
+      q('holdings', 'select=*,accounts(slug,name)&order=market_value.desc'),
+      q('properties', 'select=*&order=estimated_value.desc'),
+      q('net_worth_history', 'select=*&order=month.asc'),
+      q('fx_rates', 'select=*'),
+    ]);
+
+    var fxRate = (fxRates[0] && fxRates[0].rate) || 1.35;
+
+    // KPI
+    var latest = nwHistory[nwHistory.length - 1] || {};
+    var prev = nwHistory[nwHistory.length - 2];
+    var totalNW = (latest.investments_usd || 0) + (latest.real_estate_usd || 0) + (latest.angel_usd || 0);
+    var prevNW = prev ? (prev.investments_usd + prev.real_estate_usd + prev.angel_usd) : totalNW;
+    var nwChange = totalNW - prevNW;
+    var nwPct = prevNW > 0 ? ((nwChange / prevNW) * 100).toFixed(2) : '0.00';
+
+    document.getElementById('kpi-nw').textContent = fmt(totalNW);
+    var chgEl = document.getElementById('kpi-nw-chg');
+    chgEl.textContent = (nwChange >= 0 ? '+' : '') + fmt(nwChange) + ' (' + (nwChange >= 0 ? '+' : '') + nwPct + '%)';
+    chgEl.className = 'kpi-change ' + (nwChange >= 0 ? 'positive' : 'negative');
+    document.getElementById('kpi-inv').textContent = fmt(latest.investments_usd);
+    document.getElementById('kpi-re').textContent = fmt(latest.real_estate_usd);
+    document.getElementById('kpi-angel').textContent = fmt(latest.angel_usd);
+
+    var cashTotal = balances.filter(function(b) {
+      return b.accounts && (b.accounts.account_type === 'checking' || b.accounts.account_type === 'savings');
+    }).reduce(function(s, b) { return s + (b.balance_usd || 0); }, 0);
+    document.getElementById('kpi-cash').textContent = fmt(cashTotal);
+
+    // Accounts table
+    var balMap = {};
+    balances.forEach(function(b) { if (b.accounts) balMap[b.accounts.slug] = b; });
+    var sorted = accounts.map(function(a) { return Object.assign({}, a, { bal: balMap[a.slug] }); })
+      .sort(function(a, b) { return (b.bal ? b.bal.balance_usd : 0) - (a.bal ? a.bal.balance_usd : 0); });
+
+    document.getElementById('accounts-body').innerHTML = sorted.map(function(a) {
+      var bal = a.bal;
+      var valStr = bal ? (a.currency === 'CAD'
+        ? fmt(bal.balance) + ' <span class="badge badge-cad">CAD</span>'
+        : fmt(bal.balance)) : '\u2014';
+      return '<tr><td><strong style="font-size:13px">' + a.name + '</strong></td>'
+        + '<td style="color:var(--text-secondary);font-size:12px">' + a.institution + '</td>'
+        + '<td><span class="badge badge-' + a.account_type + '">' + a.account_type.replace('_', ' ') + '</span></td>'
+        + '<td class="right">' + valStr + '</td></tr>';
+    }).join('');
+
+    // Holdings table (top 30)
+    document.getElementById('holdings-body').innerHTML = holdings.slice(0, 30).map(function(h) {
+      return '<tr><td><span class="ticker">' + (h.ticker || '\u2014') + '</span></td>'
+        + '<td style="font-size:12px">' + h.name + '</td>'
+        + '<td class="right">' + fmtK(h.market_value) + '</td>'
+        + '<td><span class="acct-slug">' + (h.accounts ? h.accounts.slug : '') + '</span></td></tr>';
+    }).join('');
+
+    // Net worth chart
+    var ctx = document.getElementById('nw-chart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: nwHistory.map(function(h) { return h.month; }),
+        datasets: [{
+          label: 'Net Worth',
+          data: nwHistory.map(function(h) { return h.investments_usd + h.real_estate_usd + h.angel_usd; }),
+          borderColor: '#0012FF',
+          backgroundColor: 'rgba(0, 18, 255, 0.04)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: '#0012FF',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return fmt(c.parsed.y); } } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Inter' }, color: '#999' } },
+          y: { grid: { color: '#F0F0F0' }, ticks: { font: { size: 10, family: 'Inter' }, color: '#999', callback: function(v) { return '$' + (v / 1e6).toFixed(1) + 'M'; } } }
+        }
+      }
+    });
+
+    // Allocation bars
+    var brokerageAccts = sorted.filter(function(a) { return a.account_type === 'brokerage' && a.bal; });
+    var totalInv = brokerageAccts.reduce(function(s, a) { return s + (a.bal.balance_usd || 0); }, 0);
+    document.getElementById('alloc-bars').innerHTML = brokerageAccts.map(function(a, i) {
+      var pct = totalInv > 0 ? ((a.bal.balance_usd / totalInv) * 100) : 0;
+      return '<div class="alloc-row"><div class="alloc-label"><span>' + a.name + '</span><span>' + fmt(a.bal.balance_usd) + ' &middot; ' + pct.toFixed(1) + '%</span></div>'
+        + '<div class="alloc-bar"><div class="alloc-fill" style="width:' + pct + '%;background:' + COLORS[i % COLORS.length] + '"></div></div></div>';
+    }).join('');
+
+    // Properties
+    document.getElementById('prop-grid').innerHTML = properties.map(function(p) {
+      var valUSD = p.currency === 'CAD' ? Math.round(p.estimated_value / fxRate) : p.estimated_value;
+      return '<div class="prop-card"><div class="prop-name">' + p.name + '</div>'
+        + '<div class="prop-location">' + p.neighborhood + ', ' + p.city + '</div>'
+        + '<div class="prop-value">' + fmt(p.estimated_value) + ' <span class="badge badge-' + (p.currency === 'CAD' ? 'cad' : 'usd') + '">' + p.currency + '</span></div>'
+        + '<div class="prop-meta">' + p.property_type + ' &middot; Acquired ' + p.acquired + (p.currency === 'CAD' ? ' &middot; ~' + fmt(valUSD) + ' USD' : '') + '</div></div>';
+    }).join('');
+
+    document.getElementById('footer').innerHTML = 'AZRIELI FAMILY OFFICE &bull; CONFIDENTIAL &bull; LAST SYNC: '
+      + new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  } catch (err) {
+    console.error('Load error:', err);
+    document.getElementById('footer').textContent = 'Error loading data â check console.';
+  }
+})();
+</script>
+</body>
+</html>
